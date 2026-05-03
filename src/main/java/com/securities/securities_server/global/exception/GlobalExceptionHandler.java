@@ -1,6 +1,7 @@
 package com.securities.securities_server.global.exception;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -14,6 +15,12 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         ErrorResponse errorResponse = ErrorResponse.from(errorCode);
         return ResponseEntity.status(errorResponse.status()).body(errorResponse);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String defaultMessage = e.getBindingResult().getFieldError().getDefaultMessage();
+        return ResponseEntity.badRequest().body(defaultMessage);
     }
 
     @ExceptionHandler(Exception.class)
