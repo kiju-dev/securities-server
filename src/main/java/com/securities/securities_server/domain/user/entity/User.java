@@ -24,7 +24,7 @@ public class User {
     @Column(nullable = false, length = 100, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60)
     private String password;
 
     private User(String name, String email, String password) {
@@ -33,7 +33,7 @@ public class User {
         this.password = password;
     }
 
-    public static User register(String name, String email, String password) {
+    public static User signUp(String name, String email, String password) {
         return new User(name, email, password);
     }
 }
