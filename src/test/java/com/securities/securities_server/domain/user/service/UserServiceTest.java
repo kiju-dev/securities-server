@@ -1,6 +1,7 @@
 package com.securities.securities_server.domain.user.service;
 
-import com.securities.securities_server.domain.Authentication.repository.AuthenticationRepository;
+import com.securities.securities_server.domain.authentication.entity.Authentication;
+import com.securities.securities_server.domain.authentication.repository.AuthenticationRepository;
 import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
@@ -24,6 +25,7 @@ import java.util.Optional;
 
 import static com.securities.securities_server.global.exception.ErrorCode.DUPLICATE_EMAIL;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_CREDENTIAL;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_TOKEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,26 +98,20 @@ class UserServiceTest {
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(request.password(), user.getPassword())).willReturn(true);
 
-        Instant accessTokenexpiredAt = Instant.parse("2026-05-05T00:00:00Z");
-        AccessTokenInfo accessTokenInfo = new AccessTokenInfo("accessToken", accessTokenexpiredAt);
+        Instant accessTokenExpiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        AccessTokenInfo accessTokenInfo = new AccessTokenInfo("accessToken", accessTokenExpiredAt);
         given(jwtProvider.createAccessToken(user.getId())).willReturn(accessTokenInfo);
 
-        Instant refreshTokenexpiredAt = Instant.parse("2026-05-12T00:00:00Z");
-        RefreshTokenInfo refreshTokenInfo = new RefreshTokenInfo("refreshToken", refreshTokenexpiredAt);
+        Instant refreshTokenExpiredAt = Instant.parse("2026-05-12T00:00:00Z");
+        RefreshTokenInfo refreshTokenInfo = new RefreshTokenInfo("refreshToken", refreshTokenExpiredAt);
         given(jwtProvider.createRefreshToken(user.getId())).willReturn(refreshTokenInfo);
 
         // when
         TokenResponse response = userService.login(request);
 
         // then
-        assertThat(response.accessTokenInfo().accessToken())
-                .isEqualTo(accessTokenInfo.accessToken());
-        assertThat(response.accessTokenInfo().accessTokenExpiredAt())
-                .isEqualTo(accessTokenInfo.accessTokenExpiredAt());
-        assertThat(response.refreshTokenInfo().refreshToken())
-                .isEqualTo(refreshTokenInfo.refreshToken());
-        assertThat(response.refreshTokenInfo().refreshTokenExpiredAt())
-                .isEqualTo(refreshTokenInfo.refreshTokenExpiredAt());
+        assertThat(response.accessTokenInfo()).isEqualTo(accessTokenInfo);
+        assertThat(response.refreshTokenInfo()).isEqualTo(refreshTokenInfo);
         verify(authenticationRepository).save(any());
     }
 
@@ -145,6 +141,51 @@ class UserServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(INVALID_CREDENTIAL);
+    }
+
+    @Test
+    void refreshToken을_사용하여_accessToken_재발급에_성공한다() {
+        // given
+        User user = createUser();
+        String refreshToken = "refreshToken";
+        Instant expiredAt = Instant.parse("2026-05-06T00:00:00Z");
+        Authentication authentication = new Authentication(user, refreshToken, expiredAt);
+        given(authenticationRepository.findByRefreshToken(refreshToken)).willReturn(Optional.of(authentication));
+
+        Instant accessTokenExpiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        AccessTokenInfo accessTokenInfo = new AccessTokenInfo("newAccessToken", accessTokenExpiredAt);
+        given(jwtProvider.createAccessToken(user.getId())).willReturn(accessTokenInfo);
+
+        Instant refreshTokenExpiredAt = Instant.parse("2026-05-12T00:00:00Z");
+        RefreshTokenInfo refreshTokenInfo = new RefreshTokenInfo("newRefreshToken", refreshTokenExpiredAt);
+        given(jwtProvider.createRefreshToken(user.getId())).willReturn(refreshTokenInfo);
+
+        // when
+        TokenResponse response = userService.reissue(refreshToken);
+
+        // then
+        verify(jwtProvider).validate(refreshToken);
+        assertThat(authentication.getRefreshToken())
+                .isEqualTo(response.refreshTokenInfo().refreshToken());
+        assertThat(authentication.getExpiredAt())
+                .isEqualTo(response.refreshTokenInfo().refreshTokenExpiredAt());
+        assertThat(response.accessTokenInfo()).isEqualTo(accessTokenInfo);
+        assertThat(response.refreshTokenInfo()).isEqualTo(refreshTokenInfo);
+    }
+
+    @Test
+    void refreshToken_정보가_없다면_INVALID_TOKEN_예외가_발생한다() {
+        // given
+        String refreshToken = "refreshToken";
+        given(authenticationRepository.findByRefreshToken(refreshToken)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.reissue(refreshToken))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(INVALID_TOKEN);
+        verify(jwtProvider).validate(refreshToken);
+
     }
 
     private User createUser() {

@@ -11,6 +11,7 @@ import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.auth.RefreshTokenInfo;
 import com.securities.securities_server.global.cookie.CookieProvider;
 import com.securities.securities_server.global.exception.CustomException;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_CREDENTIAL;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_TOKEN;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -258,5 +260,50 @@ class UserControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(INVALID_CREDENTIAL.getCode()))
                 .andExpect(jsonPath("$.message").value(INVALID_CREDENTIAL.getMessage()));
+    }
+
+    @Test
+    void refreshToken으로_토큰_재발급에_성공한다() throws Exception {
+        // given
+        String refreshToken = "refreshToken";
+
+        String accessToken = "newAccessToken";
+        Instant accessTokenExpiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        AccessTokenInfo accessTokenInfo =
+                new AccessTokenInfo(accessToken, accessTokenExpiredAt);
+
+        String newRefreshToken = "newRefreshToken";
+        Instant refreshTokenExpiredAt = Instant.parse("2026-05-12T00:00:00Z");
+        RefreshTokenInfo refreshTokenInfo =
+                new RefreshTokenInfo(newRefreshToken, refreshTokenExpiredAt);
+
+        given(userService.reissue(refreshToken))
+                .willReturn(TokenResponse.of(accessTokenInfo, refreshTokenInfo));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().exists("refreshToken"))
+                .andExpect(jsonPath("$.accessToken").value(accessToken))
+                .andExpect(jsonPath("$.accessTokenExpiredAt")
+                        .value(accessTokenExpiredAt.toString()));
+    }
+
+    @Test
+    void refreshToken_쿠키가_없으면_예외가_발생한다() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/reissue"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshToken이_유효하지_않으면_예외가_발생한다() throws Exception {
+        String refreshToken = "invalid";
+
+        given(userService.reissue(refreshToken)).willThrow(new CustomException(INVALID_TOKEN));
+
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isUnauthorized());
     }
 }

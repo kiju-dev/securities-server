@@ -1,4 +1,4 @@
-package com.securities.securities_server.domain.Authentication.entity;
+package com.securities.securities_server.domain.authentication.entity;
 
 import com.securities.securities_server.domain.user.entity.User;
 import jakarta.persistence.Column;

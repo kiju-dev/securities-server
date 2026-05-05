@@ -3,6 +3,7 @@ package com.securities.securities_server.domain.user.controller;
 import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
 import com.securities.securities_server.domain.user.controller.response.LoginResponse;
+import com.securities.securities_server.domain.user.controller.response.ReissueResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
 import com.securities.securities_server.domain.user.controller.response.TokenResponse;
 import com.securities.securities_server.domain.user.service.UserService;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,5 +40,17 @@ public class UserController {
         cookieProvider.addRefreshTokenCookie(response, tokenResponse.refreshTokenInfo().refreshToken());
 
         return ResponseEntity.status(OK).body(loginResponse);
+    }
+
+    @PostMapping("/api/v1/auth/reissue")
+    public ResponseEntity<ReissueResponse> reissue(
+            HttpServletResponse response,
+            @CookieValue("refreshToken") String refreshToken
+    ) {
+        TokenResponse tokenResponse = userService.reissue(refreshToken);
+        ReissueResponse reissueResponse = ReissueResponse.of(tokenResponse.accessTokenInfo());
+        cookieProvider.addRefreshTokenCookie(response, tokenResponse.refreshTokenInfo().refreshToken());
+
+        return ResponseEntity.status(OK).body(reissueResponse);
     }
 }

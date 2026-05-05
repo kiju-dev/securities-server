@@ -1,7 +1,7 @@
 package com.securities.securities_server.domain.user.service;
 
-import com.securities.securities_server.domain.Authentication.entity.Authentication;
-import com.securities.securities_server.domain.Authentication.repository.AuthenticationRepository;
+import com.securities.securities_server.domain.authentication.entity.Authentication;
+import com.securities.securities_server.domain.authentication.repository.AuthenticationRepository;
 import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static com.securities.securities_server.global.exception.ErrorCode.DUPLICATE_EMAIL;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_CREDENTIAL;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_TOKEN;
 
 @Service
 @RequiredArgsConstructor
@@ -54,21 +55,41 @@ public class UserService {
         return TokenResponse.of(accessTokenInfo, refreshTokenInfo);
     }
 
+    @Transactional
+    public TokenResponse reissue(String refreshToken) {
+        jwtProvider.validate(refreshToken);
+        Authentication authentication = authenticationRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new CustomException(INVALID_TOKEN));
+        User user = authentication.getUser();
+
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(user.getId());
+        RefreshTokenInfo refreshTokenInfo = jwtProvider.createRefreshToken(user.getId());
+        authentication.updateRefreshToken(
+                refreshTokenInfo.refreshToken(),
+                refreshTokenInfo.refreshTokenExpiredAt()
+        );
+
+        return TokenResponse.of(accessTokenInfo, refreshTokenInfo);
+    }
+
     private void saveRefreshToken(User user, RefreshTokenInfo refreshTokenInfo) {
-        Authentication authentication = authenticationRepository.findByUser(user)
-                .map(existing -> {
-                    existing.updateRefreshToken(
-                            refreshTokenInfo.refreshToken(),
-                            refreshTokenInfo.refreshTokenExpiredAt()
-                    );
-                    return existing;
-                })
-                .orElseGet(() -> new Authentication(
-                        user,
-                        refreshTokenInfo.refreshToken(),
-                        refreshTokenInfo.refreshTokenExpiredAt()
-                ));
-        authenticationRepository.save(authentication);
+        authenticationRepository.findByUser(user)
+                .ifPresentOrElse(
+                        existing -> {
+                            existing.updateRefreshToken(
+                                    refreshTokenInfo.refreshToken(),
+                                    refreshTokenInfo.refreshTokenExpiredAt()
+                            );
+                        },
+                        () -> {
+                            Authentication newAuthentication = new Authentication(
+                                    user,
+                                    refreshTokenInfo.refreshToken(),
+                                    refreshTokenInfo.refreshTokenExpiredAt()
+                            );
+                            authenticationRepository.save(newAuthentication);
+                        }
+                );
     }
 
     private void validateDuplicateEmail(String email) {
