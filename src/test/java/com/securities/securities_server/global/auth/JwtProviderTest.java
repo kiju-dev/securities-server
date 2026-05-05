@@ -31,20 +31,20 @@ class JwtProviderTest {
         Long userId = 1L;
 
         // when
-        TokenInfo tokenInfo = jwtProvider.createAccessToken(userId);
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(userId);
 
         // then
-        assertThat(tokenInfo.accessToken()).isNotNull();
+        assertThat(accessTokenInfo.accessToken()).isNotNull();
     }
 
     @Test
     void AccessToken에서_userId를_얻을_수_있다() {
         // given
         Long userId = 1L;
-        TokenInfo tokenInfo = jwtProvider.createAccessToken(userId);
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(userId);
 
         // when
-        Long tokenUserId = jwtProvider.getUserId(tokenInfo.accessToken());
+        Long tokenUserId = jwtProvider.getUserId(accessTokenInfo.accessToken());
 
         // then
         assertThat(tokenUserId).isEqualTo(userId);
@@ -54,10 +54,10 @@ class JwtProviderTest {
     void AccessToken을_검증할_수_있다() {
         // given
         Long userId = 1L;
-        TokenInfo tokenInfo = jwtProvider.createAccessToken(userId);
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(userId);
 
         // when & then
-        assertThatCode(() -> jwtProvider.validate(tokenInfo.accessToken()))
+        assertThatCode(() -> jwtProvider.validate(accessTokenInfo.accessToken()))
                 .doesNotThrowAnyException();
     }
 
@@ -82,8 +82,8 @@ class JwtProviderTest {
     void AccessToken의_형식이_잘못되면_INVALID_TOKEN_예외가_발생한다() {
         // given
         Long userId = 1L;
-        TokenInfo tokenInfo = jwtProvider.createAccessToken(userId);
-        String noBearerToken = tokenInfo.accessToken().substring(7);
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(userId);
+        String noBearerToken = accessTokenInfo.accessToken().substring(7);
 
         // when
         assertThatThrownBy(() -> jwtProvider.validate(noBearerToken))
@@ -96,8 +96,8 @@ class JwtProviderTest {
     void AccessToken의_서명이_틀린경우_INVALID_TOKEN_예외가_발생한다() {
         // given
         Long userId = 1L;
-        TokenInfo tokenInfo = jwtProvider.createAccessToken(userId);
-        String[] parts = tokenInfo.accessToken().split("\\.");
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(userId);
+        String[] parts = accessTokenInfo.accessToken().split("\\.");
 
         String wrongPayload = Base64.getUrlEncoder()
                 .withoutPadding()

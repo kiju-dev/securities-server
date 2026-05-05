@@ -1,13 +1,16 @@
 package com.securities.securities_server.domain.user.service;
 
+import com.securities.securities_server.domain.Authentication.entity.Authentication;
+import com.securities.securities_server.domain.Authentication.repository.AuthenticationRepository;
 import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
-import com.securities.securities_server.domain.user.controller.response.LoginResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
+import com.securities.securities_server.domain.user.controller.response.TokenResponse;
 import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.domain.user.repository.UserRepository;
+import com.securities.securities_server.global.auth.AccessTokenInfo;
 import com.securities.securities_server.global.auth.JwtProvider;
-import com.securities.securities_server.global.auth.TokenInfo;
+import com.securities.securities_server.global.auth.RefreshTokenInfo;
 import com.securities.securities_server.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ import static com.securities.securities_server.global.exception.ErrorCode.INVALI
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuthenticationRepository authenticationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -39,12 +43,32 @@ public class UserService {
         return new SignUpResponse(savedUser.getId());
     }
 
-    public LoginResponse login(LoginRequest request) {
+    @Transactional
+    public TokenResponse login(LoginRequest request) {
         User user = getUserForLogin(request.email());
         verifyPassword(request.password(), user.getPassword());
-        TokenInfo tokenInfo = jwtProvider.createAccessToken(user.getId());
+        AccessTokenInfo accessTokenInfo = jwtProvider.createAccessToken(user.getId());
+        RefreshTokenInfo refreshTokenInfo = jwtProvider.createRefreshToken(user.getId());
+        saveRefreshToken(user, refreshTokenInfo);
 
-        return LoginResponse.of(tokenInfo);
+        return TokenResponse.of(accessTokenInfo, refreshTokenInfo);
+    }
+
+    private void saveRefreshToken(User user, RefreshTokenInfo refreshTokenInfo) {
+        Authentication authentication = authenticationRepository.findByUser(user)
+                .map(existing -> {
+                    existing.updateRefreshToken(
+                            refreshTokenInfo.refreshToken(),
+                            refreshTokenInfo.refreshTokenExpiredAt()
+                    );
+                    return existing;
+                })
+                .orElseGet(() -> new Authentication(
+                        user,
+                        refreshTokenInfo.refreshToken(),
+                        refreshTokenInfo.refreshTokenExpiredAt()
+                ));
+        authenticationRepository.save(authentication);
     }
 
     private void validateDuplicateEmail(String email) {

@@ -1,6 +1,6 @@
 package com.securities.securities_server.domain.user.controller.response;
 
-import com.securities.securities_server.global.auth.TokenInfo;
+import com.securities.securities_server.global.auth.AccessTokenInfo;
 
 import java.time.Instant;
 
@@ -8,10 +8,10 @@ public record LoginResponse(
         String accessToken,
         Instant accessTokenExpiredAt
 ) {
-    public static LoginResponse of(TokenInfo tokenInfo) {
+    public static LoginResponse of(AccessTokenInfo accessTokenInfo) {
         return new LoginResponse(
-                tokenInfo.accessToken(),
-                tokenInfo.accessTokenExpiredAt()
+                accessTokenInfo.accessToken(),
+                accessTokenInfo.accessTokenExpiredAt()
         );
     }
 }

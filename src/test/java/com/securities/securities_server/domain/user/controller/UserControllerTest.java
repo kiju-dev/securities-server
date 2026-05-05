@@ -3,10 +3,13 @@ package com.securities.securities_server.domain.user.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
-import com.securities.securities_server.domain.user.controller.response.LoginResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
+import com.securities.securities_server.domain.user.controller.response.TokenResponse;
 import com.securities.securities_server.domain.user.service.UserService;
+import com.securities.securities_server.global.auth.AccessTokenInfo;
 import com.securities.securities_server.global.auth.JwtProvider;
+import com.securities.securities_server.global.auth.RefreshTokenInfo;
+import com.securities.securities_server.global.cookie.CookieProvider;
 import com.securities.securities_server.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -16,6 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -26,10 +30,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@Import(CookieProvider.class)
 @SuppressWarnings("NonAsciiCharacters")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class UserControllerTest {
@@ -203,17 +209,27 @@ class UserControllerTest {
     @Test
     void 로그인_성공시_Token_정보를_반환한다() throws Exception {
         LoginRequest request = new LoginRequest("kiju@gmail.com", "Password12!@");
-        String token = "accessToken";
-        Instant expiredAt = Instant.parse("2026-05-05T00:00:00Z");
-        LoginResponse response = new LoginResponse(token, expiredAt);
-        given(userService.login(request)).willReturn(response);
+
+        String accessToken = "accessToken";
+        Instant accessTokenExpiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        AccessTokenInfo accessTokenInfo = new AccessTokenInfo(accessToken, accessTokenExpiredAt);
+
+        String refreshToken = "refreshToken";
+        Instant refreshTokenExpiredAt = Instant.parse("2026-05-12T00:00:00Z");
+        RefreshTokenInfo refreshTokenInfo = new RefreshTokenInfo(refreshToken, refreshTokenExpiredAt);
+
+        given(userService.login(request)).willReturn(TokenResponse.of(accessTokenInfo, refreshTokenInfo));
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value(token))
-                .andExpect(jsonPath("$.accessTokenExpiredAt").value(expiredAt.toString()));
+                .andExpect(cookie().exists("refreshToken"))
+                .andExpect(cookie().value("refreshToken", refreshToken))
+                .andExpect(cookie().httpOnly("refreshToken", true))
+                .andExpect(jsonPath("$.accessToken").value(accessToken))
+                .andExpect(jsonPath("$.accessTokenExpiredAt").value(accessTokenExpiredAt.toString()));
+
     }
 
     @Test

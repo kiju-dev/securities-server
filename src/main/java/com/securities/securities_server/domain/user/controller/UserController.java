@@ -4,7 +4,10 @@ import com.securities.securities_server.domain.user.controller.request.LoginRequ
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
 import com.securities.securities_server.domain.user.controller.response.LoginResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
+import com.securities.securities_server.domain.user.controller.response.TokenResponse;
 import com.securities.securities_server.domain.user.service.UserService;
+import com.securities.securities_server.global.cookie.CookieProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,7 @@ import static org.springframework.http.HttpStatus.OK;
 public class UserController {
 
     private final UserService userService;
+    private final CookieProvider cookieProvider;
 
     @PostMapping("/api/v1/user")
     public ResponseEntity<SignUpResponse> signUp(@Valid @RequestBody SignUpRequest request) {
@@ -28,8 +32,11 @@ public class UserController {
     }
 
     @PostMapping("/api/v1/auth/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse response = userService.login(request);
-        return ResponseEntity.status(OK).body(response);
+    public ResponseEntity<LoginResponse> login(HttpServletResponse response, @RequestBody LoginRequest request) {
+        TokenResponse tokenResponse = userService.login(request);
+        LoginResponse loginResponse = LoginResponse.of(tokenResponse.accessTokenInfo());
+        cookieProvider.addRefreshTokenCookie(response, tokenResponse.refreshTokenInfo().refreshToken());
+
+        return ResponseEntity.status(OK).body(loginResponse);
     }
 }

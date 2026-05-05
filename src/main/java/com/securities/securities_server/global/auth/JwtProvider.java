@@ -26,7 +26,7 @@ public class JwtProvider {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public TokenInfo createAccessToken(Long userId) {
+    public AccessTokenInfo createAccessToken(Long userId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(Duration.ofMinutes(5));
 
@@ -37,7 +37,20 @@ public class JwtProvider {
                 .signWith(secretKey)
                 .compact();
 
-        return new TokenInfo(token, expiration);
+        return new AccessTokenInfo(token, expiration);
+    }
+
+    public RefreshTokenInfo createRefreshToken(Long userId) {
+        Instant now = Instant.now();
+        Instant expiration = now.plus(Duration.ofDays(7));
+
+        String token = Jwts.builder()
+                .subject(String.valueOf(userId))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
+                .signWith(secretKey)
+                .compact();
+        return new RefreshTokenInfo(token, expiration);
     }
 
     public Long getUserId(String token) {

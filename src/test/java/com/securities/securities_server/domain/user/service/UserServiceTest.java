@@ -1,13 +1,15 @@
 package com.securities.securities_server.domain.user.service;
 
+import com.securities.securities_server.domain.Authentication.repository.AuthenticationRepository;
 import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
-import com.securities.securities_server.domain.user.controller.response.LoginResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
+import com.securities.securities_server.domain.user.controller.response.TokenResponse;
 import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.domain.user.repository.UserRepository;
+import com.securities.securities_server.global.auth.AccessTokenInfo;
 import com.securities.securities_server.global.auth.JwtProvider;
-import com.securities.securities_server.global.auth.TokenInfo;
+import com.securities.securities_server.global.auth.RefreshTokenInfo;
 import com.securities.securities_server.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -36,6 +38,9 @@ class UserServiceTest {
 
     @Mock
     UserRepository userRepository;
+
+    @Mock
+    AuthenticationRepository authenticationRepository;
 
     @Mock
     PasswordEncoder passwordEncoder;
@@ -89,19 +94,29 @@ class UserServiceTest {
         User user = createUser();
         LoginRequest request = new LoginRequest("kiju@gmail.com", "Password12!@");
         given(userRepository.findByEmail(request.email())).willReturn(Optional.of(user));
-
         given(passwordEncoder.matches(request.password(), user.getPassword())).willReturn(true);
 
-        Instant expiredAt = Instant.parse("2026-05-05T00:00:00Z");
-        TokenInfo tokenInfo = new TokenInfo("accessToken", expiredAt);
-        given(jwtProvider.createAccessToken(user.getId())).willReturn(tokenInfo);
+        Instant accessTokenexpiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        AccessTokenInfo accessTokenInfo = new AccessTokenInfo("accessToken", accessTokenexpiredAt);
+        given(jwtProvider.createAccessToken(user.getId())).willReturn(accessTokenInfo);
+
+        Instant refreshTokenexpiredAt = Instant.parse("2026-05-12T00:00:00Z");
+        RefreshTokenInfo refreshTokenInfo = new RefreshTokenInfo("refreshToken", refreshTokenexpiredAt);
+        given(jwtProvider.createRefreshToken(user.getId())).willReturn(refreshTokenInfo);
 
         // when
-        LoginResponse response = userService.login(request);
+        TokenResponse response = userService.login(request);
 
         // then
-        assertThat(response.accessToken()).isEqualTo(tokenInfo.accessToken());
-        assertThat(response.accessTokenExpiredAt()).isEqualTo(tokenInfo.accessTokenExpiredAt());
+        assertThat(response.accessTokenInfo().accessToken())
+                .isEqualTo(accessTokenInfo.accessToken());
+        assertThat(response.accessTokenInfo().accessTokenExpiredAt())
+                .isEqualTo(accessTokenInfo.accessTokenExpiredAt());
+        assertThat(response.refreshTokenInfo().refreshToken())
+                .isEqualTo(refreshTokenInfo.refreshToken());
+        assertThat(response.refreshTokenInfo().refreshTokenExpiredAt())
+                .isEqualTo(refreshTokenInfo.refreshTokenExpiredAt());
+        verify(authenticationRepository).save(any());
     }
 
     @Test
