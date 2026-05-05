@@ -17,3 +17,6 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+
+jwt:
+  secret: my-secret-key-is-so-important-very-very-important-ok

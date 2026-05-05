@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
 import com.securities.securities_server.domain.user.service.UserService;
+import com.securities.securities_server.global.auth.JwtProvider;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +36,9 @@ class UserControllerTest {
 
     @MockitoBean
     UserService userService;
+
+    @MockitoBean
+    JwtProvider jwtProvider;
 
     @Test
     void 회원가입_성공_시_userId를_반환한다() throws Exception {
