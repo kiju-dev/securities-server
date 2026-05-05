@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 
 import static com.securities.securities_server.global.exception.ErrorCode.EXPIRED_TOKEN;
@@ -24,16 +26,18 @@ public class JwtProvider {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createAccessToken(Long userId) {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + 1000 * 60 * 5);
+    public TokenInfo createAccessToken(Long userId) {
+        Instant now = Instant.now();
+        Instant expiration = now.plus(Duration.ofMinutes(5));
 
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .subject(String.valueOf(userId))
-                .issuedAt(now)
-                .expiration(expiration)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
                 .signWith(secretKey)
                 .compact();
+
+        return new TokenInfo(token, expiration);
     }
 
     public Long getUserId(String token) {
