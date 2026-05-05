@@ -1,9 +1,13 @@
 package com.securities.securities_server.domain.user.service;
 
+import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
+import com.securities.securities_server.domain.user.controller.response.LoginResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
 import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.domain.user.repository.UserRepository;
+import com.securities.securities_server.global.auth.JwtProvider;
+import com.securities.securities_server.global.auth.TokenInfo;
 import com.securities.securities_server.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -13,7 +17,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
+import java.util.Optional;
+
 import static com.securities.securities_server.global.exception.ErrorCode.DUPLICATE_EMAIL;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_CREDENTIAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +39,9 @@ class UserServiceTest {
 
     @Mock
     PasswordEncoder passwordEncoder;
+    
+    @Mock
+    JwtProvider jwtProvider;
 
     @InjectMocks
     UserService userService;
@@ -72,5 +83,57 @@ class UserServiceTest {
                 .isEqualTo(DUPLICATE_EMAIL);
     }
 
+    @Test
+    void 이메일과_비밀번호를_사용하여_로그인에_성공한다() {
+        // given
+        User user = createUser();
+        LoginRequest request = new LoginRequest("kiju@gmail.com", "Password12!@");
+        given(userRepository.findByEmail(request.email())).willReturn(Optional.of(user));
 
+        given(passwordEncoder.matches(request.password(), user.getPassword())).willReturn(true);
+
+        Instant expiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        TokenInfo tokenInfo = new TokenInfo("accessToken", expiredAt);
+        given(jwtProvider.createAccessToken(user.getId())).willReturn(tokenInfo);
+
+        // when
+        LoginResponse response = userService.login(request);
+
+        // then
+        assertThat(response.accessToken()).isEqualTo(tokenInfo.accessToken());
+        assertThat(response.accessTokenExpiredAt()).isEqualTo(tokenInfo.accessTokenExpiredAt());
+    }
+
+    @Test
+    void 이메일이_존재하지_않으면_INVALID_CREDENTIAL_예외가_발생한다() {
+        // given
+        LoginRequest request = new LoginRequest("unknown@gmail.com", "Password12!@");
+        given(userRepository.findByEmail(request.email())).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.login(request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(INVALID_CREDENTIAL);
+    }
+
+    @Test
+    void 비밀번호가_올바르지_않으면_INVALID_CREDENTIAL_예외가_발생한다() {
+        // given
+        User user = createUser();
+        LoginRequest request = new LoginRequest("kiju@gmail.com", "wrongPassword");
+        given(userRepository.findByEmail(request.email())).willReturn(Optional.of(user));
+        given(passwordEncoder.matches(request.password(), user.getPassword())).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> userService.login(request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(INVALID_CREDENTIAL);
+    }
+
+    private User createUser() {
+        return User.signUp("kiju", "kiju@gmail.com", "encodedPassword");
+    }
+    
 }

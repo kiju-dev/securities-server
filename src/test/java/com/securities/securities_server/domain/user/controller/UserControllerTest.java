@@ -1,10 +1,13 @@
 package com.securities.securities_server.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.securities.securities_server.domain.user.controller.request.LoginRequest;
 import com.securities.securities_server.domain.user.controller.request.SignUpRequest;
+import com.securities.securities_server.domain.user.controller.response.LoginResponse;
 import com.securities.securities_server.domain.user.controller.response.SignUpResponse;
 import com.securities.securities_server.domain.user.service.UserService;
 import com.securities.securities_server.global.auth.JwtProvider;
+import com.securities.securities_server.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;
@@ -16,6 +19,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_CREDENTIAL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -192,5 +198,49 @@ class UserControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
         }
+    }
+
+    @Test
+    void 로그인_성공시_Token_정보를_반환한다() throws Exception {
+        LoginRequest request = new LoginRequest("kiju@gmail.com", "Password12!@");
+        String token = "accessToken";
+        Instant expiredAt = Instant.parse("2026-05-05T00:00:00Z");
+        LoginResponse response = new LoginResponse(token, expiredAt);
+        given(userService.login(request)).willReturn(response);
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value(token))
+                .andExpect(jsonPath("$.accessTokenExpiredAt").value(expiredAt.toString()));
+    }
+
+    @Test
+    void 이메일이_올바르지_않으면_에러가_발생한다() throws Exception {
+        // given
+        LoginRequest request = new LoginRequest("kiju@gmail.com", "Password12!@");
+        given(userService.login(any())).willThrow(new CustomException(INVALID_CREDENTIAL));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void 비밀번호가_올바르지_않으면_에러가_발생한다() throws Exception {
+        // given
+        LoginRequest request = new LoginRequest("kiju@gmail.com", "Password12!@");
+        given(userService.login(any())).willThrow(new CustomException(INVALID_CREDENTIAL));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(INVALID_CREDENTIAL.getCode()))
+                .andExpect(jsonPath("$.message").value(INVALID_CREDENTIAL.getMessage()));
     }
 }
