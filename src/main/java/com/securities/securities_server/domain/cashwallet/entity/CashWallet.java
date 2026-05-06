@@ -31,10 +31,10 @@ public class CashWallet {
     private String accountNumber;
 
     @Column(nullable = false)
-    private long reserve; // 예치금
+    private long balance; // 예치금
 
     @Column(nullable = false)
-    private long deposit; // 매수 주문으로 묶인 금액
+    private long lockedAmount; // 매수 주문으로 묶인 금액
 
     @Column(nullable = false, name = "is_blocked")
     private boolean blocked; // 계좌 정지 여부
@@ -42,14 +42,14 @@ public class CashWallet {
     private CashWallet(
             User user,
             String accountNumber,
-            long reserve,
-            long deposit,
+            long balance,
+            long lockedAmount,
             boolean isBlocked
     ) {
         this.user = user;
         this.accountNumber = accountNumber;
-        this.reserve = reserve;
-        this.deposit = deposit;
+        this.balance = balance;
+        this.lockedAmount = lockedAmount;
         this.blocked = isBlocked;
     }
 
