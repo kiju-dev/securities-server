@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface CashWalletRepository extends JpaRepository<CashWallet, Long> {
 
     Optional<CashWallet> findByUser(User user);
+
+    boolean existsByUser(User user);
 }

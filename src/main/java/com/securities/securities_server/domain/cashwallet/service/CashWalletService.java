@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.DEPOSIT;
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_EXISTS;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
 
@@ -32,11 +33,18 @@ public class CashWalletService {
     @Transactional
     public CreateCashWalletResponse createCashWallet(Long userId) {
         User user = getUser(userId);
+        validateDuplicateCashWallet(user);
         String accountNumber = accountNumberGenerator.generateAccountNumber();
 
         CashWallet cashWallet = CashWallet.create(user, accountNumber);
         cashWalletRepository.save(cashWallet);
         return new CreateCashWalletResponse(accountNumber);
+    }
+
+    private void validateDuplicateCashWallet(User user) {
+        if (cashWalletRepository.existsByUser(user)) {
+            throw new CustomException(CASH_WALLET_ALREADY_EXISTS);
+        }
     }
 
     @Transactional

@@ -18,6 +18,7 @@ public enum ErrorCode {
     CASH_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "CASH_003", "현금 계좌를 찾을 수 없습니다."),
     CASH_WALLET_ALREADY_SUSPENDED(HttpStatus.CONFLICT, "CASH_004", "이미 정지된 현금 계좌입니다."),
     CASH_WALLET_NOT_SUSPENDED(HttpStatus.CONFLICT, "CASH_005", "이미 정지가 해제된 현금 계좌입니다."),
+    CASH_WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "CASH_006", "이미 개설된 현금 계좌가 존재합니다."),
 
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
     ;

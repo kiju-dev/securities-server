@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_EXISTS;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
@@ -51,17 +52,34 @@ class CashWalletServiceTest {
         @Test
         void 현금_계좌를_개설하고_계좌번호를_반환한다() {
             // given
+            Long userId = 1L;
             User user = createUser();
             String accountNumber = "777123456781";
-            given(userRepository.findById(any())).willReturn(Optional.of(user));
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
             given(accountNumberGenerator.generateAccountNumber()).willReturn(accountNumber);
 
             // when
-            CreateCashWalletResponse response = cashWalletService.createCashWallet(user.getId());
+            CreateCashWalletResponse response = cashWalletService.createCashWallet(userId);
 
             // then
             assertThat(response.accountNumber()).isEqualTo(accountNumber);
             verify(cashWalletRepository).save(any(CashWallet.class));
+        }
+
+        @Test
+        void 이미_개설된_현금_계좌가_존재하면_CASH_WALLET_ALREADY_EXISTS_예외가_발생한다() {
+            // given
+            Long userId = 1L;
+            User user = createUser();
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(cashWalletRepository.existsByUser(user))
+                    .willThrow(new CustomException(CASH_WALLET_ALREADY_EXISTS));
+
+            // when & then
+            assertThatThrownBy(() -> cashWalletService.createCashWallet(userId))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(CASH_WALLET_ALREADY_EXISTS);
         }
 
         @Test
