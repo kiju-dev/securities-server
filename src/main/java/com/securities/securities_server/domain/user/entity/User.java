@@ -1,0 +1,41 @@
+package com.securities.securities_server.domain.user.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
+import static lombok.AccessLevel.PROTECTED;
+
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = PROTECTED)
+@Getter
+public class User {
+
+    @Id @GeneratedValue(strategy = IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 10)
+    private String name;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String email;
+
+    @Column(nullable = false, length = 60)
+    private String password;
+
+    private User(String name, String email, String password) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    }
+
+    public static User signUp(String name, String email, String password) {
+        return new User(name, email, password);
+    }
+}
