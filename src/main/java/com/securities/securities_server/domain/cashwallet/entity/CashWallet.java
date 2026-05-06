@@ -1,6 +1,7 @@
 package com.securities.securities_server.domain.cashwallet.entity;
 
 import com.securities.securities_server.domain.user.entity.User;
+import com.securities.securities_server.global.exception.CustomException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +12,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_AMOUNT;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -31,7 +36,7 @@ public class CashWallet {
     private String accountNumber;
 
     @Column(nullable = false)
-    private long balance; // 예치금
+    private long balance; // 잔액
 
     @Column(nullable = false)
     private long lockedAmount; // 매수 주문으로 묶인 금액
@@ -44,13 +49,13 @@ public class CashWallet {
             String accountNumber,
             long balance,
             long lockedAmount,
-            boolean isBlocked
+            boolean blocked
     ) {
         this.user = user;
         this.accountNumber = accountNumber;
         this.balance = balance;
         this.lockedAmount = lockedAmount;
-        this.blocked = isBlocked;
+        this.blocked = blocked;
     }
 
     public static CashWallet create(
@@ -64,5 +69,37 @@ public class CashWallet {
                 0L,
                 false
         );
+    }
+
+    public void deposit(long amount) {
+        validateNotBlocked();
+        validatePositiveAmount(amount);
+        this.balance += amount;
+    }
+
+    public void block() {
+        if (this.blocked) {
+            throw new CustomException(CASH_WALLET_ALREADY_SUSPENDED);
+        }
+        this.blocked = true;
+    }
+
+    public void unblock() {
+        if (!this.blocked) {
+            throw new CustomException(CASH_WALLET_NOT_SUSPENDED);
+        }
+        this.blocked = false;
+    }
+
+    private void validateNotBlocked() {
+        if (blocked) {
+            throw new CustomException(CASH_WALLET_SUSPENDED);
+        }
+    }
+
+    private static void validatePositiveAmount(long amount) {
+        if (amount <= 0) {
+            throw new CustomException(INVALID_AMOUNT);
+        }
     }
 }

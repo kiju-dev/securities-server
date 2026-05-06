@@ -36,22 +36,17 @@ public class CashWalletHistory {
     private long txAmount;
 
     @Column(nullable = false)
-    private String txNote;
-
-    @Column(nullable = false)
     private long balanceAfter;
 
     public CashWalletHistory(
             CashWallet cashWallet,
             CashWalletTxType txType,
             long txAmount,
-            String txNote,
             long balanceAfter
     ) {
         this.cashWallet = cashWallet;
         this.txType = txType;
         this.txAmount = txAmount;
-        this.txNote = txNote;
         this.balanceAfter = balanceAfter;
     }
 
@@ -59,14 +54,12 @@ public class CashWalletHistory {
             CashWallet cashWallet,
             CashWalletTxType txType,
             long txAmount,
-            String txNote,
             long balanceAfter
     ) {
         return new CashWalletHistory(
                 cashWallet,
                 txType,
                 txAmount,
-                txNote,
                 balanceAfter
         );
     }

@@ -13,6 +13,12 @@ public enum ErrorCode {
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_002", "만료된 토큰입니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_003", "인증이 필요합니다."),
 
+    INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "CASH_001", "금액은 0보다 커야 합니다."),
+    CASH_WALLET_SUSPENDED(HttpStatus.FORBIDDEN, "CASH_002", "현금 계좌가 정지 상태입니다."),
+    CASH_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "CASH_003", "현금 계좌를 찾을 수 없습니다."),
+    CASH_WALLET_ALREADY_SUSPENDED(HttpStatus.CONFLICT, "CASH_004", "이미 정지된 현금 계좌입니다."),
+    CASH_WALLET_NOT_SUSPENDED(HttpStatus.CONFLICT, "CASH_005", "이미 정지가 해제된 현금 계좌입니다."),
+
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
     ;
 

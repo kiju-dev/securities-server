@@ -1,6 +1,9 @@
 package com.securities.securities_server.domain.cashwallet.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.service.CashWalletService;
 import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.config.WebConfig;
@@ -8,6 +11,7 @@ import com.securities.securities_server.global.exception.CustomException;
 import com.securities.securities_server.support.TestWebConfig;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,9 +22,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,39 +48,115 @@ class CashWalletControllerTest {
     @Autowired
     MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockitoBean
     CashWalletService cashWalletService;
 
     @MockitoBean
     JwtProvider jwtProvider;
 
-    @Test
-    void 현금_계좌를_개설한다() throws Exception {
-        // given
-        Long userId = 1L;
-        String accountNumber = "777123456781";
+    @Nested
+    class 개설_시 {
 
-        given(cashWalletService.createCashWallet(userId))
-                .willReturn(new CreateCashWalletResponse(accountNumber));
+        @Test
+        void 현금_계좌를_개설한다() throws Exception {
+            // given
+            Long userId = 1L;
+            String accountNumber = "777123456781";
 
-        // when & then
-        mockMvc.perform(post("/api/v1/cash-wallet"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.accountNumber").value(accountNumber));
+            given(cashWalletService.createCashWallet(userId))
+                    .willReturn(new CreateCashWalletResponse(accountNumber));
 
-        verify(cashWalletService).createCashWallet(userId);
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet"))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.accountNumber").value(accountNumber));
+
+            verify(cashWalletService).createCashWallet(userId);
+        }
+
+        @Test
+        void User를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            given(cashWalletService.createCashWallet(userId))
+                    .willThrow(new CustomException(USER_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("USER_003"));
+        }
     }
 
-    @Test
-    void 계좌_생성_시_사용자_정보가_없으면_예외가_발생한다() throws Exception {
-        // given
-        Long userId = 1L;
-        given(cashWalletService.createCashWallet(userId))
-                .willThrow(new CustomException(USER_NOT_FOUND));
+    @Nested
+    class 입금_시 {
 
-        // when & then
-        mockMvc.perform(post("/api/v1/cash-wallet"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("USER_003"));
+        @Test
+        void 입금_후_현금_계좌_잔액을_반환한다() throws Exception {
+            // given
+            Long userId = 1L;
+            DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
+            DepositCashWalletResponse response = new DepositCashWalletResponse(20000L);
+            given(cashWalletService.depositCashWallet(userId, request))
+                    .willReturn(response);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/deposit")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balanceAfter").value(response.balanceAfter()));
+        }
+
+        @Test
+        void User를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
+            given(cashWalletService.depositCashWallet(userId, request))
+                    .willThrow(new CustomException(USER_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/deposit")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("USER_003"));
+        }
+
+        @Test
+        void 현금_계좌를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
+            given(cashWalletService.depositCashWallet(userId, request))
+                    .willThrow(new CustomException(CASH_WALLET_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/deposit")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("CASH_003"));
+        }
+
+        @Test
+        void 현금_계좌가_정지_상태이면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
+            given(cashWalletService.depositCashWallet(userId, request))
+                    .willThrow(new CustomException(CASH_WALLET_SUSPENDED));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/deposit")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("CASH_002"));
+        }
     }
 }
