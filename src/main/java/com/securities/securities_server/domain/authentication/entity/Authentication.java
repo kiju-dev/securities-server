@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
@@ -24,7 +25,7 @@ public class Authentication {
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
