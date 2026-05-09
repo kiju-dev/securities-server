@@ -88,8 +88,8 @@ public class CashWallet {
         this.balance -= amount;
     }
 
-    private long getAvailableAmount() {
-        return Math.max(this.balance - this.lockedAmount, 0);
+    public long getAvailableAmount() {
+        return this.balance - this.lockedAmount;
     }
 
     public void block() {

@@ -2,6 +2,7 @@ package com.securities.securities_server.domain.cashwallet.controller;
 
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
@@ -9,6 +10,7 @@ import com.securities.securities_server.domain.cashwallet.service.CashWalletServ
 import com.securities.securities_server.global.auth.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +47,12 @@ public class CashWalletController {
             @RequestBody WithdrawCashWalletRequest request
     ) {
         WithdrawCashWalletResponse response = cashWalletService.withdrawCashWallet(userId, request);
+        return ResponseEntity.status(OK).body(response);
+    }
+
+    @GetMapping("/balance")
+    public ResponseEntity<CashWalletBalanceResponse> getBalance(@AuthUser Long userId) {
+        CashWalletBalanceResponse response = cashWalletService.getBalance(userId);
         return ResponseEntity.status(OK).body(response);
     }
 }

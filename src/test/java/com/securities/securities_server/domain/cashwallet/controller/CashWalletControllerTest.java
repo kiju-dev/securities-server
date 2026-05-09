@@ -3,6 +3,7 @@ package com.securities.securities_server.domain.cashwallet.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
@@ -31,6 +32,7 @@ import static com.securities.securities_server.global.exception.ErrorCode.USER_N
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -246,5 +248,52 @@ class CashWalletControllerTest {
                     .andExpect(jsonPath("$.code").value("CASH_007"));
         }
 
+    }
+
+    @Nested
+    class 잔액_조회_시 {
+
+        @Test
+        void 잔액과_매수주문으로_묶인_금액_사용_가능한_잔액을_반환한다() throws Exception {
+            // given
+            Long userId = 1L;
+            CashWalletBalanceResponse response =
+                    new CashWalletBalanceResponse(30000L, 10000L, 20000L);
+            given(cashWalletService.getBalance(userId)).willReturn(response);
+
+            // when & then
+            mockMvc.perform(get("/api/v1/cash-wallet/balance"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value(30000L))
+                    .andExpect(jsonPath("$.lockedAmount").value(10000L))
+                    .andExpect(jsonPath("$.availableAmount").value(20000L));
+            verify(cashWalletService).getBalance(userId);
+        }
+
+        @Test
+        void User를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            given(cashWalletService.getBalance(userId))
+                    .willThrow(new CustomException(USER_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(get("/api/v1/cash-wallet/balance"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("USER_003"));
+        }
+
+        @Test
+        void 현금_계좌를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            given(cashWalletService.getBalance(userId))
+                    .willThrow(new CustomException(CASH_WALLET_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(get("/api/v1/cash-wallet/balance"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("CASH_003"));
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.securities.securities_server.domain.cashwallet.service;
 
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
@@ -270,6 +271,55 @@ class CashWalletServiceTest {
                     .extracting("errorCode")
                     .isEqualTo(INSUFFICIENT_BALANCE);
             verify(cashWalletHistoryService, never()).createCashWalletHistory(any());
+        }
+    }
+
+    @Nested
+    class 잔액_조회_시 {
+
+        @Test
+        void 현금_계좌의_잔액과_매수주문으로_묶인_금액과_사용가능한_잔액을_반환한다() {
+            // given
+            User user = createUser(1L);
+            CashWallet cashWallet = createCashWallet(user);
+            cashWallet.deposit(10000L);
+            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+            given(cashWalletRepository.findByUser(user)).willReturn(Optional.of(cashWallet));
+
+            // when
+            CashWalletBalanceResponse response = cashWalletService.getBalance(user.getId());
+
+            // then
+            assertThat(response.balance()).isEqualTo(10000L);
+            assertThat(response.lockedAmount()).isEqualTo(0L);
+            assertThat(response.availableAmount()).isEqualTo(10000L);
+        }
+
+        @Test
+        void User를_찾을_수_없으면_USER_NOT_FOUND_예외가_발생한다() {
+            // given
+            Long userId = 1L;
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> cashWalletService.getBalance(userId))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(USER_NOT_FOUND);
+        }
+
+        @Test
+        void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
+            // given
+            User user = createUser(1L);
+            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+            given(cashWalletRepository.findByUser(user)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> cashWalletService.getBalance(user.getId()))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(CASH_WALLET_NOT_FOUND);
         }
     }
 

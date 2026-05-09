@@ -2,6 +2,7 @@ package com.securities.securities_server.domain.cashwallet.service;
 
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
@@ -68,6 +69,18 @@ public class CashWalletService {
         cashWallet.withdraw(request.amount());
         saveHistory(cashWallet, WITHDRAW, request.amount());
         return new WithdrawCashWalletResponse(cashWallet.getBalance());
+    }
+
+    @Transactional(readOnly = true)
+    public CashWalletBalanceResponse getBalance(Long userId) {
+        User user = getUser(userId);
+        CashWallet cashWallet = getCashWallet(user);
+
+        return new CashWalletBalanceResponse(
+                cashWallet.getBalance(),
+                cashWallet.getLockedAmount(),
+                cashWallet.getAvailableAmount()
+        );
     }
 
     private void saveHistory(CashWallet cashWallet, CashWalletTxType txType, long amount) {
