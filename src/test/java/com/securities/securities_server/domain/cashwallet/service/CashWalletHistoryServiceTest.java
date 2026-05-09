@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.DEPOSIT;
+import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.WITHDRAW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
@@ -33,12 +34,11 @@ class CashWalletHistoryServiceTest {
     void 현금_계좌에_입금_내역을_저장한다() {
         // given
         CashWallet cashWallet = createCashWallet();
-        long txAmount = 10000L;
         CashWalletHistoryCommand command =
                 new CashWalletHistoryCommand(
                         cashWallet,
                         DEPOSIT,
-                        txAmount,
+                        10000L,
                         cashWallet.getBalance()
                 );
 
@@ -53,8 +53,35 @@ class CashWalletHistoryServiceTest {
 
         assertThat(savedHistory.getCashWallet()).isEqualTo(cashWallet);
         assertThat(savedHistory.getTxType()).isEqualTo(DEPOSIT);
-        assertThat(savedHistory.getTxAmount()).isEqualTo(txAmount);
+        assertThat(savedHistory.getTxAmount()).isEqualTo(10000L);
         assertThat(savedHistory.getBalanceAfter()).isEqualTo(cashWallet.getBalance());
+    }
+
+    @Test
+    void 현금_계좌에_출금_내역을_저장한다() {
+        // given
+        CashWallet cashWallet = createCashWallet();
+        CashWalletHistoryCommand command =
+                new CashWalletHistoryCommand(
+                        cashWallet,
+                        WITHDRAW,
+                        20000L,
+                        10000L
+                );
+
+        // when
+        cashWalletHistoryService.createCashWalletHistory(command);
+
+        // then
+        ArgumentCaptor<CashWalletHistory> captor =
+                ArgumentCaptor.forClass(CashWalletHistory.class);
+        verify(cashWalletHistoryRepository).save(captor.capture());
+        CashWalletHistory savedHistory = captor.getValue();
+
+        assertThat(savedHistory.getCashWallet()).isEqualTo(cashWallet);
+        assertThat(savedHistory.getTxType()).isEqualTo(WITHDRAW);
+        assertThat(savedHistory.getTxAmount()).isEqualTo(20000L);
+        assertThat(savedHistory.getBalanceAfter()).isEqualTo(10000L);
     }
 
     private CashWallet createCashWallet() {
