@@ -1,5 +1,6 @@
 package com.securities.securities_server.domain.cashwallet.entity;
 
+import com.securities.securities_server.global.baseentity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
@@ -10,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
@@ -18,7 +21,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class CashWalletHistory {
+@SQLDelete(sql = "UPDATE users SET deleted_at = now() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
+public class CashWalletHistory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)

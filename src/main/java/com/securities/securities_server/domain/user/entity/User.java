@@ -1,5 +1,6 @@
 package com.securities.securities_server.domain.user.entity;
 
+import com.securities.securities_server.global.baseentity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 import static lombok.AccessLevel.PROTECTED;
@@ -15,7 +18,9 @@ import static lombok.AccessLevel.PROTECTED;
 @Table(name = "users")
 @NoArgsConstructor(access = PROTECTED)
 @Getter
-public class User {
+@SQLDelete(sql = "UPDATE users SET deleted_at = now() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
+public class User extends BaseEntity {
 
     @Id @GeneratedValue(strategy = IDENTITY)
     private Long id;

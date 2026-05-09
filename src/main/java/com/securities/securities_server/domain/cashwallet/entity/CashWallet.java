@@ -1,6 +1,7 @@
 package com.securities.securities_server.domain.cashwallet.entity;
 
 import com.securities.securities_server.domain.user.entity.User;
+import com.securities.securities_server.global.baseentity.BaseEntity;
 import com.securities.securities_server.global.exception.CustomException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +12,8 @@ import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_SUSPENDED;
@@ -23,7 +26,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class CashWallet {
+@SQLDelete(sql = "UPDATE users SET deleted_at = now() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
+public class CashWallet extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
