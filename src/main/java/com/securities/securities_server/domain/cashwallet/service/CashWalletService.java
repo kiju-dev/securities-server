@@ -1,8 +1,10 @@
 package com.securities.securities_server.domain.cashwallet.service;
 
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.entity.CashWallet;
 import com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType;
 import com.securities.securities_server.domain.cashwallet.repository.CashWalletRepository;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.DEPOSIT;
+import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.WITHDRAW;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_EXISTS;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
@@ -55,6 +58,16 @@ public class CashWalletService {
         cashWallet.deposit(request.amount());
         saveHistory(cashWallet, DEPOSIT, request.amount());
         return new DepositCashWalletResponse(cashWallet.getBalance());
+    }
+
+    @Transactional
+    public WithdrawCashWalletResponse withdrawCashWallet(Long userId, WithdrawCashWalletRequest request) {
+        User user = getUser(userId);
+        CashWallet cashWallet = getCashWallet(user);
+
+        cashWallet.withdraw(request.amount());
+        saveHistory(cashWallet, WITHDRAW, request.amount());
+        return new WithdrawCashWalletResponse(cashWallet.getBalance());
     }
 
     private void saveHistory(CashWallet cashWallet, CashWalletTxType txType, long amount) {

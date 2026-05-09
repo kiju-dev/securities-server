@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_BALANCE;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_AMOUNT;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -75,6 +76,20 @@ public class CashWallet {
         validateNotBlocked();
         validatePositiveAmount(amount);
         this.balance += amount;
+    }
+
+    public void withdraw(long amount) {
+        validateNotBlocked();
+        validatePositiveAmount(amount);
+        long availableAmount = getAvailableAmount();
+        if (amount > availableAmount) {
+            throw new CustomException(INSUFFICIENT_BALANCE);
+        }
+        this.balance -= amount;
+    }
+
+    private long getAvailableAmount() {
+        return Math.max(this.balance - this.lockedAmount, 0);
     }
 
     public void block() {

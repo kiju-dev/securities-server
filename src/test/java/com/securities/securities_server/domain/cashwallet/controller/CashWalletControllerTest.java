@@ -2,8 +2,10 @@ package com.securities.securities_server.domain.cashwallet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.service.CashWalletService;
 import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.config.WebConfig;
@@ -24,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_BALANCE;
 import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -158,5 +161,90 @@ class CashWalletControllerTest {
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("CASH_002"));
         }
+    }
+
+    @Nested
+    class 출금_시 {
+
+        @Test
+        void 출금_후_현금_계좌_잔액을_반환한다() throws Exception {
+            // given
+            Long userId = 1L;
+            WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
+            WithdrawCashWalletResponse response = new WithdrawCashWalletResponse(20000L);
+            given(cashWalletService.withdrawCashWallet(userId, request)).willReturn(response);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/withdraw")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balanceAfter").value(20000L));
+        }
+
+        @Test
+        void User를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
+            given(cashWalletService.withdrawCashWallet(userId, request))
+                    .willThrow(new CustomException(USER_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/withdraw")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("USER_003"));
+        }
+
+        @Test
+        void 현금_계좌를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
+            given(cashWalletService.withdrawCashWallet(userId, request))
+                    .willThrow(new CustomException(CASH_WALLET_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/withdraw")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("CASH_003"));
+        }
+
+        @Test
+        void 현금_계좌가_정지_상태이면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
+            given(cashWalletService.withdrawCashWallet(userId, request))
+                    .willThrow(new CustomException(CASH_WALLET_SUSPENDED));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/withdraw")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("CASH_002"));
+        }
+
+        @Test
+        void 출금_금액이_사용_가능한_잔액보다_크면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
+            given(cashWalletService.withdrawCashWallet(userId, request))
+                    .willThrow(new CustomException(INSUFFICIENT_BALANCE));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/withdraw")
+                    .contentType(APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("CASH_007"));
+        }
+
     }
 }

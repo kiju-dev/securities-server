@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_BALANCE;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_AMOUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -91,6 +92,50 @@ class CashWalletTest {
                         .isInstanceOf(CustomException.class)
                         .extracting("errorCode")
                         .isEqualTo(INVALID_AMOUNT);
+            }
+        }
+
+        @Nested
+        class 출금_시 {
+
+            @Test
+            void 출금_금액만큼_잔액이_감소한다() {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(30000L);
+
+                // when
+                cashWallet.withdraw(20000L);
+
+                // then
+                assertThat(cashWallet.getBalance()).isEqualTo(10000L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-10000L, -400L, -1L, 0L})
+            void 출금_금액이_0이거나_음수인_경우_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.withdraw(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_AMOUNT);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {20001L, 30000L, 100000L})
+            void 출금_금액이_사용가능한_잔액보다_크면_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(20000L);
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.withdraw(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INSUFFICIENT_BALANCE);
             }
         }
 

@@ -1,8 +1,10 @@
 package com.securities.securities_server.domain.cashwallet.controller;
 
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.service.CashWalletService;
 import com.securities.securities_server.global.auth.AuthUser;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,15 @@ public class CashWalletController {
             @RequestBody DepositCashWalletRequest request
     ) {
         DepositCashWalletResponse response = cashWalletService.depositCashWallet(userId, request);
+        return ResponseEntity.status(OK).body(response);
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<WithdrawCashWalletResponse> withdrawCashWallet(
+            @AuthUser Long userId,
+            @RequestBody WithdrawCashWalletRequest request
+    ) {
+        WithdrawCashWalletResponse response = cashWalletService.withdrawCashWallet(userId, request);
         return ResponseEntity.status(OK).body(response);
     }
 }
