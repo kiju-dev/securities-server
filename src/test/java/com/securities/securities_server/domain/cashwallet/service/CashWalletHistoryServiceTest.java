@@ -1,5 +1,6 @@
 package com.securities.securities_server.domain.cashwallet.service;
 
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletHistoriesResponse;
 import com.securities.securities_server.domain.cashwallet.entity.CashWallet;
 import com.securities.securities_server.domain.cashwallet.entity.CashWalletHistory;
 import com.securities.securities_server.domain.cashwallet.repository.CashWalletHistoryRepository;
@@ -13,10 +14,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.DEPOSIT;
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.WITHDRAW;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,6 +89,30 @@ class CashWalletHistoryServiceTest {
         assertThat(savedHistory.getTxType()).isEqualTo(WITHDRAW);
         assertThat(savedHistory.getTxAmount()).isEqualTo(20000L);
         assertThat(savedHistory.getBalanceAfter()).isEqualTo(10000L);
+    }
+
+    @Test
+    void 현금_계좌_내역을_페이지로_조회한다() {
+        // given
+        CashWallet cashWallet = createCashWallet();
+        CashWalletHistory history1 =
+                CashWalletHistory.createHistory(cashWallet, DEPOSIT, 10000L, 20000L);
+        CashWalletHistory history2 =
+                CashWalletHistory.createHistory(cashWallet, DEPOSIT, 20000L, 40000L);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        PageImpl<CashWalletHistory> page = new PageImpl<>(List.of(history1, history2), pageable, 2);
+        given(cashWalletHistoryRepository.findByCashWallet(cashWallet, pageable)).willReturn(page);
+
+        // when
+        CashWalletHistoriesResponse response = cashWalletHistoryService.getHistories(cashWallet, pageable);
+
+        // then
+        assertThat(response.totalElements()).isEqualTo(2);
+        assertThat(response.cashWalletHistories()).hasSize(2);
+        assertThat(response.cashWalletHistories().get(0).txAmount()).isEqualTo(10000L);
+        assertThat(response.cashWalletHistories().get(1).txAmount()).isEqualTo(20000L);
     }
 
     private CashWallet createCashWallet() {

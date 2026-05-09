@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface CashWalletRepository extends JpaRepository<CashWallet, Long> {
 
-    Optional<CashWallet> findByUser(User user);
-
     boolean existsByUser(User user);
+
+    Optional<CashWallet> findByUserId(Long userId);
 }

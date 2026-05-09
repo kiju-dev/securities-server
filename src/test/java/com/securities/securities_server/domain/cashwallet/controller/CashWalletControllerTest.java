@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletHistoriesResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletHistoryResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
@@ -22,9 +24,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.DEPOSIT;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_BALANCE;
@@ -294,6 +302,47 @@ class CashWalletControllerTest {
             mockMvc.perform(get("/api/v1/cash-wallet/balance"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("CASH_003"));
+        }
+    }
+
+    @Nested
+    class 내역_조회_시 {
+
+        @Test
+        void 현금_계좌_내역을_페이징하여_반환한다() throws Exception {
+            // given
+            Long userId = 1L;
+            Pageable pageable = PageRequest.of(0, 10);
+            CashWalletHistoryResponse history1 =
+                    new CashWalletHistoryResponse(
+                            1L,
+                            DEPOSIT,
+                            20000L,
+                            30000L,
+                            LocalDateTime.now()
+                    );
+            CashWalletHistoryResponse history2 =
+                    new CashWalletHistoryResponse(
+                            2L,
+                            DEPOSIT,
+                            20000L,
+                            50000L,
+                            LocalDateTime.now()
+                    );
+            CashWalletHistoriesResponse response = new CashWalletHistoriesResponse(
+                    2L,
+                    List.of(history1, history2)
+            );
+            given(cashWalletService.getHistories(userId, pageable)).willReturn(response);
+
+            // when & then
+            mockMvc.perform(get("/api/v1/cash-wallet/histories")
+                            .queryParam("page", String.valueOf(0))
+                            .queryParam("size", String.valueOf(10)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(2))
+                    .andExpect(jsonPath("$.cashWalletHistories[0].historyId").value(history1.historyId()))
+                    .andExpect(jsonPath("$.cashWalletHistories[1].historyId").value(history2.historyId()));
         }
     }
 }

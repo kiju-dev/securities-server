@@ -3,12 +3,14 @@ package com.securities.securities_server.domain.cashwallet.controller;
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletHistoriesResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.service.CashWalletService;
 import com.securities.securities_server.global.auth.AuthUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,6 +55,15 @@ public class CashWalletController {
     @GetMapping("/balance")
     public ResponseEntity<CashWalletBalanceResponse> getBalance(@AuthUser Long userId) {
         CashWalletBalanceResponse response = cashWalletService.getBalance(userId);
+        return ResponseEntity.status(OK).body(response);
+    }
+
+    @GetMapping("/histories")
+    public ResponseEntity<CashWalletHistoriesResponse> getHistories(
+            @AuthUser Long userId,
+            Pageable pageable
+    ) {
+        CashWalletHistoriesResponse response = cashWalletService.getHistories(userId, pageable);
         return ResponseEntity.status(OK).body(response);
     }
 }

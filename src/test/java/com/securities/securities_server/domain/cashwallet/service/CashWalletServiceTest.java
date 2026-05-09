@@ -21,6 +21,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -111,8 +113,7 @@ class CashWalletServiceTest {
             User user = createUser(1L);
             DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(cashWallet.getUser())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when
             DepositCashWalletResponse response = cashWalletService.depositCashWallet(user.getId(), request);
@@ -130,27 +131,11 @@ class CashWalletServiceTest {
         }
 
         @Test
-        void User를_찾을_수_없으면_USER_NOT_FOUND_예외가_발생한다() {
-            // given
-            Long userId = 1L;
-            DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
-            given(userRepository.findById(userId)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> cashWalletService.depositCashWallet(userId, request))
-                    .isInstanceOf(CustomException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(USER_NOT_FOUND);
-            verify(cashWalletHistoryService, never()).createCashWalletHistory(any());
-        }
-
-        @Test
         void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             User user = createUser(1L);
             DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(user)).willReturn(Optional.empty());
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.depositCashWallet(user.getId(), request))
@@ -167,8 +152,7 @@ class CashWalletServiceTest {
             DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.block();
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(cashWallet.getUser())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.depositCashWallet(user.getId(), request))
@@ -189,8 +173,7 @@ class CashWalletServiceTest {
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.deposit(30000L);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(user)).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when
             WithdrawCashWalletResponse response = cashWalletService.withdrawCashWallet(user.getId(), request);
@@ -208,27 +191,11 @@ class CashWalletServiceTest {
         }
 
         @Test
-        void User를_찾을_수_없으면_USER_NOT_FOUND_예외가_발생한다() {
-            // given
-            Long userId = 1L;
-            WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
-            given(userRepository.findById(userId)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(userId, request))
-                    .isInstanceOf(CustomException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(USER_NOT_FOUND);
-            verify(cashWalletHistoryService, never()).createCashWalletHistory(any());
-        }
-
-        @Test
         void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             User user = createUser(1L);
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(user)).willReturn(Optional.empty());
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(user.getId(), request))
@@ -245,8 +212,7 @@ class CashWalletServiceTest {
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.block();
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(cashWallet.getUser())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(user.getId(), request))
@@ -262,8 +228,7 @@ class CashWalletServiceTest {
             User user = createUser(1L);
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(cashWallet.getUser())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(user.getId(), request))
@@ -283,8 +248,7 @@ class CashWalletServiceTest {
             User user = createUser(1L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.deposit(10000L);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(user)).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when
             CashWalletBalanceResponse response = cashWalletService.getBalance(user.getId());
@@ -296,27 +260,31 @@ class CashWalletServiceTest {
         }
 
         @Test
-        void User를_찾을_수_없으면_USER_NOT_FOUND_예외가_발생한다() {
+        void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
-            Long userId = 1L;
-            given(userRepository.findById(userId)).willReturn(Optional.empty());
+            User user = createUser(1L);
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> cashWalletService.getBalance(userId))
+            assertThatThrownBy(() -> cashWalletService.getBalance(user.getId()))
                     .isInstanceOf(CustomException.class)
                     .extracting("errorCode")
-                    .isEqualTo(USER_NOT_FOUND);
+                    .isEqualTo(CASH_WALLET_NOT_FOUND);
         }
+    }
+
+    @Nested
+    class 내역_조회_시 {
 
         @Test
         void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             User user = createUser(1L);
-            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-            given(cashWalletRepository.findByUser(user)).willReturn(Optional.empty());
+            Pageable pageable = PageRequest.of(0, 10);
+            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> cashWalletService.getBalance(user.getId()))
+            assertThatThrownBy(() -> cashWalletService.getHistories(user.getId(), pageable))
                     .isInstanceOf(CustomException.class)
                     .extracting("errorCode")
                     .isEqualTo(CASH_WALLET_NOT_FOUND);

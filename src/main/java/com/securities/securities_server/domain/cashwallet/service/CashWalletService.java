@@ -3,6 +3,7 @@ package com.securities.securities_server.domain.cashwallet.service;
 import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
 import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletHistoriesResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
 import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
@@ -14,6 +15,7 @@ import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.domain.user.repository.UserRepository;
 import com.securities.securities_server.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,8 +55,7 @@ public class CashWalletService {
 
     @Transactional
     public DepositCashWalletResponse depositCashWallet(Long userId, DepositCashWalletRequest request) {
-        User user = getUser(userId);
-        CashWallet cashWallet = getCashWallet(user);
+        CashWallet cashWallet = getCashWallet(userId);
 
         cashWallet.deposit(request.amount());
         saveHistory(cashWallet, DEPOSIT, request.amount());
@@ -63,8 +64,7 @@ public class CashWalletService {
 
     @Transactional
     public WithdrawCashWalletResponse withdrawCashWallet(Long userId, WithdrawCashWalletRequest request) {
-        User user = getUser(userId);
-        CashWallet cashWallet = getCashWallet(user);
+        CashWallet cashWallet = getCashWallet(userId);
 
         cashWallet.withdraw(request.amount());
         saveHistory(cashWallet, WITHDRAW, request.amount());
@@ -73,14 +73,20 @@ public class CashWalletService {
 
     @Transactional(readOnly = true)
     public CashWalletBalanceResponse getBalance(Long userId) {
-        User user = getUser(userId);
-        CashWallet cashWallet = getCashWallet(user);
+        CashWallet cashWallet = getCashWallet(userId);
 
         return new CashWalletBalanceResponse(
                 cashWallet.getBalance(),
                 cashWallet.getLockedAmount(),
                 cashWallet.getAvailableAmount()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public CashWalletHistoriesResponse getHistories(Long userId, Pageable pageable) {
+        CashWallet cashWallet = getCashWallet(userId);
+
+        return cashWalletHistoryService.getHistories(cashWallet, pageable);
     }
 
     private void saveHistory(CashWallet cashWallet, CashWalletTxType txType, long amount) {
@@ -94,8 +100,8 @@ public class CashWalletService {
         cashWalletHistoryService.createCashWalletHistory(command);
     }
 
-    private CashWallet getCashWallet(User user) {
-        return cashWalletRepository.findByUser(user)
+    private CashWallet getCashWallet(Long userId) {
+        return cashWalletRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
     }
 
