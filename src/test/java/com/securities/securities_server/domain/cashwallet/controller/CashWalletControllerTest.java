@@ -345,4 +345,34 @@ class CashWalletControllerTest {
                     .andExpect(jsonPath("$.cashWalletHistories[1].historyId").value(history2.historyId()));
         }
     }
+
+    @Nested
+    class 계좌_정지_시 {
+
+        @Test
+        void 현금_계좌를_정지시키고_200_OK를_반환한다() throws Exception {
+            // given
+            Long cashWalletId = 1L;
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/{cashWalletId}/block", cashWalletId))
+                    .andExpect(status().isOk());
+            verify(cashWalletService).blockCashWallet(cashWalletId);
+        }
+    }
+
+    @Nested
+    class 계좌_정지_해제_시 {
+
+        @Test
+        void 현금_계좌_정지를_해제시키고_200_OK를_반환한다() throws Exception {
+            // given
+            Long cashWalletId = 1L;
+
+            // when & then
+            mockMvc.perform(post("/api/v1/cash-wallet/{cashWalletId}/unblock", cashWalletId))
+                    .andExpect(status().isOk());
+            verify(cashWalletService).unblockCashWallet(cashWalletId);
+        }
+    }
 }

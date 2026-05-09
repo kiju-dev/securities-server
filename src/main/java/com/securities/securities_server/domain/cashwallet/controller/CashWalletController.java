@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,5 +66,17 @@ public class CashWalletController {
     ) {
         CashWalletHistoriesResponse response = cashWalletService.getHistories(userId, pageable);
         return ResponseEntity.status(OK).body(response);
+    }
+
+    @PostMapping("/{cashWalletId}/block")
+    public ResponseEntity<Void> blockCashWallet(@PathVariable Long cashWalletId) {
+        cashWalletService.blockCashWallet(cashWalletId);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PostMapping("/{cashWalletId}/unblock")
+    public ResponseEntity<Void> unblockCashWallet(@PathVariable Long cashWalletId) {
+        cashWalletService.unblockCashWallet(cashWalletId);
+        return ResponseEntity.status(OK).build();
     }
 }

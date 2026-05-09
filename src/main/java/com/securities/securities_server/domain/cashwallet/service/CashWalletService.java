@@ -89,6 +89,18 @@ public class CashWalletService {
         return cashWalletHistoryService.getHistories(cashWallet, pageable);
     }
 
+    @Transactional
+    public void blockCashWallet(Long cashWalletId) {
+        CashWallet cashWallet = getCashWalletById(cashWalletId);
+        cashWallet.block();
+    }
+
+    @Transactional
+    public void unblockCashWallet(Long cashWalletId) {
+        CashWallet cashWallet = getCashWalletById(cashWalletId);
+        cashWallet.unblock();
+    }
+
     private void saveHistory(CashWallet cashWallet, CashWalletTxType txType, long amount) {
         CashWalletHistoryCommand command =
                 new CashWalletHistoryCommand(
@@ -102,6 +114,11 @@ public class CashWalletService {
 
     private CashWallet getCashWallet(Long userId) {
         return cashWalletRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
+    }
+
+    private CashWallet getCashWalletById(Long cashWalletId) {
+        return cashWalletRepository.findById(cashWalletId)
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
     }
 

@@ -291,6 +291,75 @@ class CashWalletServiceTest {
         }
     }
 
+    @Nested
+    class 계좌_정지_시 {
+
+        @Test
+        void 현금_계좌를_정지한다() {
+            // given
+            Long userId = 1L;
+            Long cashWalletId = 1L;
+            User user = createUser(userId);
+            CashWallet cashWallet = createCashWallet(user);
+
+            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.of(cashWallet));
+
+            // when
+            cashWalletService.blockCashWallet(cashWalletId);
+
+            // then
+            assertThat(cashWallet.isBlocked()).isTrue();
+        }
+
+        @Test
+        void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
+            // given
+            Long cashWalletId = 1L;
+            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> cashWalletService.blockCashWallet(cashWalletId))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(CASH_WALLET_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    class 계좌_정지_해제_시 {
+
+        @Test
+        void 현금_계좌_정지를_해제한다() {
+            // given
+            Long userId = 1L;
+            Long cashWalletId = 1L;
+            User user = createUser(userId);
+            CashWallet cashWallet = createCashWallet(user);
+            cashWallet.block();
+
+            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.of(cashWallet));
+
+            // when
+            cashWalletService.unblockCashWallet(cashWalletId);
+
+            // then
+            assertThat(cashWallet.isBlocked()).isFalse();
+        }
+
+        @Test
+        void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
+            // given
+            Long cashWalletId = 1L;
+            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> cashWalletService.unblockCashWallet(cashWalletId))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(CASH_WALLET_NOT_FOUND);
+        }
+    }
+
     private User createUser(Long userId) {
         User user = User.signUp("kiju", "kiju@gmail.com", "Passwo12!@");
         ReflectionTestUtils.setField(user, "id", userId);
