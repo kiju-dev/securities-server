@@ -29,9 +29,4 @@ public class Stock extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 6)
     private String code;
-
-    public Stock(String name, String code) {
-        this.name = name;
-        this.code = code;
-    }
 }
