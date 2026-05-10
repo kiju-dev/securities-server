@@ -20,7 +20,7 @@ public class CashWalletHistoryService {
 
     @Transactional
     public void createCashWalletHistory(CashWalletHistoryCommand command) {
-        CashWalletHistory history = CashWalletHistory.createHistory(
+        CashWalletHistory history = CashWalletHistory.create(
                 command.cashWallet(),
                 command.txType(),
                 command.txAmount(),

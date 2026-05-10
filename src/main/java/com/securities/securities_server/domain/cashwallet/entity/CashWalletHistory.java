@@ -55,7 +55,7 @@ public class CashWalletHistory extends BaseEntity {
         this.balanceAfter = balanceAfter;
     }
 
-    public static CashWalletHistory createHistory(
+    public static CashWalletHistory create(
             CashWallet cashWallet,
             CashWalletTxType txType,
             long txAmount,
