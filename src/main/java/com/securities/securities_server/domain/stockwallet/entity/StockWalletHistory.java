@@ -1,9 +1,8 @@
-package com.securities.securities_server.domain.cashwallet.entity;
+package com.securities.securities_server.domain.stockwallet.entity;
 
 import com.securities.securities_server.global.baseentity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -14,58 +13,56 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@SQLDelete(sql = "UPDATE cash_wallet_history SET deleted_at = now() WHERE id = ?")
+@SQLDelete(sql = "UPDATE stock_wallet_history SET deleted_at = now() WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
-public class CashWalletHistory extends BaseEntity {
+public class StockWalletHistory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "cash_wallet_id", nullable = false)
-    private CashWallet cashWallet;
+    @JoinColumn(name = "stock_id", nullable = false)
+    private StockWallet stockWallet;
 
-    @Enumerated(STRING)
     @Column(nullable = false)
-    private CashWalletTxType txType;
+    private StockWalletTxType txType;
 
     @Column(nullable = false)
     private long txAmount;
 
     @Column(nullable = false)
-    private long balanceAfter;
+    private long remainingQuantity;
 
-    public CashWalletHistory(
-            CashWallet cashWallet,
-            CashWalletTxType txType,
+    private StockWalletHistory(
+            StockWallet stockWallet,
+            StockWalletTxType txType,
             long txAmount,
-            long balanceAfter
+            long remainingQuantity
     ) {
-        this.cashWallet = cashWallet;
+        this.stockWallet = stockWallet;
         this.txType = txType;
         this.txAmount = txAmount;
-        this.balanceAfter = balanceAfter;
+        this.remainingQuantity = remainingQuantity;
     }
 
-    public static CashWalletHistory createHistory(
-            CashWallet cashWallet,
-            CashWalletTxType txType,
+    public static StockWalletHistory create(
+            StockWallet stockWallet,
+            StockWalletTxType txType,
             long txAmount,
-            long balanceAfter
+            long remainingQuantity
     ) {
-        return new CashWalletHistory(
-                cashWallet,
+        return new StockWalletHistory(
+                stockWallet,
                 txType,
                 txAmount,
-                balanceAfter
+                remainingQuantity
         );
     }
 }

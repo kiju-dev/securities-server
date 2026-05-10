@@ -26,7 +26,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@SQLDelete(sql = "UPDATE users SET deleted_at = now() WHERE id = ?")
+@SQLDelete(sql = "UPDATE cash_wallet SET deleted_at = now() WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class CashWallet extends BaseEntity {
 
