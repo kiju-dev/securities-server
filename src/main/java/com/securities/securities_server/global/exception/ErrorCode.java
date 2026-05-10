@@ -21,6 +21,10 @@ public enum ErrorCode {
     CASH_WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "CASH_006", "이미 개설된 현금 계좌가 존재합니다."),
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "CASH_007", "잔액이 부족합니다."),
 
+    STOCK_WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "STOCK_WALLET_001", "이미 개설된 종목 계좌가 존재합니다."),
+
+    STOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_001", "종목을 찾을 수 없습니다."),
+
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
     ;
 
