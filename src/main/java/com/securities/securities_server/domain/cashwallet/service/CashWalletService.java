@@ -1,0 +1,129 @@
+package com.securities.securities_server.domain.cashwallet.service;
+
+import com.securities.securities_server.domain.cashwallet.controller.request.DepositCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.request.WithdrawCashWalletRequest;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletBalanceResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.CashWalletHistoriesResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.CreateCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.DepositCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.controller.response.WithdrawCashWalletResponse;
+import com.securities.securities_server.domain.cashwallet.entity.CashWallet;
+import com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType;
+import com.securities.securities_server.domain.cashwallet.repository.CashWalletRepository;
+import com.securities.securities_server.domain.cashwallet.service.dto.CashWalletHistoryCommand;
+import com.securities.securities_server.domain.user.entity.User;
+import com.securities.securities_server.domain.user.repository.UserRepository;
+import com.securities.securities_server.global.exception.CustomException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.DEPOSIT;
+import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.WITHDRAW;
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_ALREADY_EXISTS;
+import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
+import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
+
+@Service
+@RequiredArgsConstructor
+public class CashWalletService {
+
+    private final CashWalletHistoryService cashWalletHistoryService;
+
+    private final CashWalletRepository cashWalletRepository;
+    private final UserRepository userRepository;
+
+    private final AccountNumberGenerator accountNumberGenerator;
+
+    @Transactional
+    public CreateCashWalletResponse createCashWallet(Long userId) {
+        User user = getUser(userId);
+        validateDuplicateCashWallet(user);
+        String accountNumber = accountNumberGenerator.generateAccountNumber();
+
+        CashWallet cashWallet = CashWallet.create(user, accountNumber);
+        cashWalletRepository.save(cashWallet);
+        return new CreateCashWalletResponse(accountNumber);
+    }
+
+    private void validateDuplicateCashWallet(User user) {
+        if (cashWalletRepository.existsByUser(user)) {
+            throw new CustomException(CASH_WALLET_ALREADY_EXISTS);
+        }
+    }
+
+    @Transactional
+    public DepositCashWalletResponse depositCashWallet(Long userId, DepositCashWalletRequest request) {
+        CashWallet cashWallet = getCashWallet(userId);
+
+        cashWallet.deposit(request.amount());
+        saveHistory(cashWallet, DEPOSIT, request.amount());
+        return new DepositCashWalletResponse(cashWallet.getBalance());
+    }
+
+    @Transactional
+    public WithdrawCashWalletResponse withdrawCashWallet(Long userId, WithdrawCashWalletRequest request) {
+        CashWallet cashWallet = getCashWallet(userId);
+
+        cashWallet.withdraw(request.amount());
+        saveHistory(cashWallet, WITHDRAW, request.amount());
+        return new WithdrawCashWalletResponse(cashWallet.getBalance());
+    }
+
+    @Transactional(readOnly = true)
+    public CashWalletBalanceResponse getBalance(Long userId) {
+        CashWallet cashWallet = getCashWallet(userId);
+
+        return new CashWalletBalanceResponse(
+                cashWallet.getBalance(),
+                cashWallet.getLockedAmount(),
+                cashWallet.getAvailableAmount()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CashWalletHistoriesResponse getHistories(Long userId, Pageable pageable) {
+        CashWallet cashWallet = getCashWallet(userId);
+
+        return cashWalletHistoryService.getHistories(cashWallet, pageable);
+    }
+
+    @Transactional
+    public void blockCashWallet(Long cashWalletId) {
+        CashWallet cashWallet = getCashWalletById(cashWalletId);
+        cashWallet.block();
+    }
+
+    @Transactional
+    public void unblockCashWallet(Long cashWalletId) {
+        CashWallet cashWallet = getCashWalletById(cashWalletId);
+        cashWallet.unblock();
+    }
+
+    private void saveHistory(CashWallet cashWallet, CashWalletTxType txType, long amount) {
+        CashWalletHistoryCommand command =
+                new CashWalletHistoryCommand(
+                        cashWallet,
+                        txType,
+                        amount,
+                        cashWallet.getBalance()
+                );
+        cashWalletHistoryService.createCashWalletHistory(command);
+    }
+
+    private CashWallet getCashWallet(Long userId) {
+        return cashWalletRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
+    }
+
+    private CashWallet getCashWalletById(Long cashWalletId) {
+        return cashWalletRepository.findById(cashWalletId)
+                .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
+    }
+
+    private User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+    }
+}

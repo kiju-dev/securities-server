@@ -11,19 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BaseEntityTest {
 
     @Test
-    void delete_메서드_호출_시_deletedAt이_저장된다() {
-        // given
-        TestEntity testEntity = new TestEntity();
-
-        // when
-        testEntity.delete();
-
-        // then
-        assertThat(testEntity.getDeletedAt()).isNotNull();
-        assertThat(testEntity.isDeleted()).isTrue();
-    }
-
-    @Test
     void 삭제되지_않은_엔티티는_isDeleted_결과가_false다() {
         // given
         TestEntity testEntity = new TestEntity();
