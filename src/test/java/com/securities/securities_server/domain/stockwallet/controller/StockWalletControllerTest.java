@@ -188,4 +188,34 @@ class StockWalletControllerTest {
                     .andExpect(jsonPath("$.code").value("STOCK_WALLET_002"));
         }
     }
+
+    @Nested
+    class 정지_시 {
+
+        @Test
+        void 종목_계좌를_정지시킨다() throws Exception {
+            // given
+            Long stockWalletId = 1L;
+
+            // when & then
+            mockMvc.perform(post("/api/v1/stock-wallet/{stockWalletId}/block", stockWalletId))
+                    .andExpect(status().isOk());
+            verify(stockWalletService).blockStockWallet(stockWalletId);
+        }
+    }
+
+    @Nested
+    class 정지_해제_시 {
+
+        @Test
+        void 종목_계좌를_정지_해제시킨다() throws Exception {
+            // given
+            Long stockWalletId = 1L;
+
+            // when & then
+            mockMvc.perform(post("/api/v1/stock-wallet/{stockWalletId}/unblock", stockWalletId))
+                    .andExpect(status().isOk());
+            verify(stockWalletService).unblockStockWallet(stockWalletId);
+        }
+    }
 }

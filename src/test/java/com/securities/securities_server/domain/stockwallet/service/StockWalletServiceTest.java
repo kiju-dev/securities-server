@@ -193,12 +193,78 @@ class StockWalletServiceTest {
             // given
             Long userId = 1L;
             Long stockId = 1L;
-            Long stockWalletId = 1L;
             given(stockWalletRepository.findByUserIdAndStockId(userId, stockId))
                     .willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> stockWalletService.getStockWalletBalance(userId, stockId))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(STOCK_WALLET_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    class 정지_시 {
+
+        @Test
+        void 종목_계좌를_정지시킨다() {
+            // given
+            Long userId = 1L;
+            Long stockId = 1L;
+            Long stockWalletId = 1L;
+            StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
+            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.of(stockWallet));
+
+            // when
+            stockWalletService.blockStockWallet(stockWalletId);
+
+            // then
+            assertThat(stockWallet.isBlocked()).isTrue();
+        }
+
+        @Test
+        void 종목_계좌를_찾을_수_없으면_STOCK_WALLET_NOT_FOUND_예외가_발생한다() {
+            // given
+            Long stockWalletId = 1L;
+            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> stockWalletService.blockStockWallet(stockWalletId))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(STOCK_WALLET_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    class 정지_해제_시 {
+
+        @Test
+        void 종목_계좌를_정지_해제시킨다() {
+            // given
+            Long userId = 1L;
+            Long stockId = 1L;
+            Long stockWalletId = 1L;
+            StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
+            stockWallet.block();
+            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.of(stockWallet));
+
+            // when
+            stockWalletService.unblockStockWallet(stockWalletId);
+
+            // then
+            assertThat(stockWallet.isBlocked()).isFalse();
+        }
+
+        @Test
+        void 종목_계좌를_찾을_수_없으면_STOCK_WALLET_NOT_FOUND_예외가_발생한다() {
+            // given
+            Long stockWalletId = 1L;
+            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> stockWalletService.unblockStockWallet(stockWalletId))
                     .isInstanceOf(CustomException.class)
                     .extracting("errorCode")
                     .isEqualTo(STOCK_WALLET_NOT_FOUND);

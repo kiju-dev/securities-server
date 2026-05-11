@@ -11,6 +11,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_SUSPENDED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -104,6 +106,64 @@ class StockWalletTest {
 
                 // then
                 assertThat(availableQuantity).isEqualTo(10L);
+            }
+        }
+
+        @Nested
+        class 정지_시 {
+
+            @Test
+            void 종목_계좌를_정지시킨다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when
+                stockWallet.block();
+
+                // then
+                assertThat(stockWallet.isBlocked()).isTrue();
+            }
+
+            @Test
+            void 이미_정지된_상태인_경우_STOCK_WALLET_ALREADY_SUSPENDED_예외가_발생한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+                stockWallet.block();
+
+                // when & then
+                assertThatThrownBy(stockWallet::block)
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(STOCK_WALLET_ALREADY_SUSPENDED);
+            }
+        }
+
+        @Nested
+        class 정지_해제_시 {
+
+            @Test
+            void 종목_계좌를_정지_해제시킨다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+                stockWallet.block();
+
+                // when
+                stockWallet.unblock();
+
+                // then
+                assertThat(stockWallet.isBlocked()).isFalse();
+            }
+
+            @Test
+            void 이미_정지_해제된_상태인_경우_STOCK_WALLET_NOT_SUSPENDED_예외가_발생한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when & then
+                assertThatThrownBy(stockWallet::unblock)
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(STOCK_WALLET_NOT_SUSPENDED);
             }
         }
     }

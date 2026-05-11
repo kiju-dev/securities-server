@@ -39,7 +39,7 @@ public class StockWalletService {
 
     @Transactional
     public StockWalletBalanceResponse creditStockWallet(Long userId, CreditStockWalletRequest request) {
-        StockWallet stockWallet = getStockWallet(request.stockWalletId(), userId);
+        StockWallet stockWallet = getStockWalletByIdAndUserId(request.stockWalletId(), userId);
         stockWallet.credit(request.quantity());
         return StockWalletBalanceResponse.from(stockWallet);
     }
@@ -48,6 +48,18 @@ public class StockWalletService {
     public StockWalletBalanceResponse getStockWalletBalance(Long userId, Long stockId) {
         StockWallet stockWallet = getStockWalletByUserIdAndStockId(userId, stockId);
         return StockWalletBalanceResponse.from(stockWallet);
+    }
+
+    @Transactional
+    public void blockStockWallet(Long stockWalletId) {
+        StockWallet stockWallet = getStockWallet(stockWalletId);
+        stockWallet.block();
+    }
+
+    @Transactional
+    public void unblockStockWallet(Long stockWalletId) {
+        StockWallet stockWallet = getStockWallet(stockWalletId);
+        stockWallet.unblock();
     }
 
     private void validateDuplicateStockWallet(Long userId, Long stockId) {
@@ -66,13 +78,18 @@ public class StockWalletService {
                 .orElseThrow(() -> new CustomException(STOCK_NOT_FOUND));
     }
 
-    private StockWallet getStockWallet(Long stockWalletId, Long userId) {
+    private StockWallet getStockWalletByIdAndUserId(Long stockWalletId, Long userId) {
         return stockWalletRepository.findByIdAndUserId(stockWalletId, userId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 
     private StockWallet getStockWalletByUserIdAndStockId(Long userId, Long stockId) {
         return stockWalletRepository.findByUserIdAndStockId(userId, stockId)
+                .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
+    }
+
+    private StockWallet getStockWallet(Long stockWalletId) {
+        return stockWalletRepository.findById(stockWalletId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 }

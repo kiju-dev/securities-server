@@ -50,4 +50,16 @@ public class StockWalletController {
         StockWalletBalanceResponse response = stockWalletService.getStockWalletBalance(userId, stockId);
         return ResponseEntity.status(OK).body(response);
     }
+
+    @PostMapping("/{stockWalletId}/block")
+    public ResponseEntity<Void> blockStockWallet(@PathVariable Long stockWalletId) {
+        stockWalletService.blockStockWallet(stockWalletId);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PostMapping("/{stockWalletId}/unblock")
+    public ResponseEntity<Void> unblockStockWallet(@PathVariable Long stockWalletId) {
+        stockWalletService.unblockStockWallet(stockWalletId);
+        return ResponseEntity.status(OK).build();
+    }
 }

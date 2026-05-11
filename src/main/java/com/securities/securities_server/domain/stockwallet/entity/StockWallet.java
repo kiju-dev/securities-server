@@ -17,6 +17,8 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_SUSPENDED;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_SUSPENDED;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -82,6 +84,20 @@ public class StockWallet extends BaseEntity {
 
     public long getAvailableQuantity() {
         return this.holdingQuantity - this.lockedQuantity;
+    }
+
+    public void block() {
+        if (this.blocked) {
+            throw new CustomException(STOCK_WALLET_ALREADY_SUSPENDED);
+        }
+        this.blocked = true;
+    }
+
+    public void unblock() {
+        if (!this.blocked) {
+            throw new CustomException(STOCK_WALLET_NOT_SUSPENDED);
+        }
+        this.blocked = false;
     }
 
     private void validatePositiveQuantity(long quantity) {
