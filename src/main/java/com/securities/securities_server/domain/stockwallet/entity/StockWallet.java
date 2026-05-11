@@ -3,6 +3,7 @@ package com.securities.securities_server.domain.stockwallet.entity;
 import com.securities.securities_server.domain.stock.entity.Stock;
 import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.global.baseentity.BaseEntity;
+import com.securities.securities_server.global.exception.CustomException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,6 +16,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_SUSPENDED;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -68,5 +71,24 @@ public class StockWallet extends BaseEntity {
                 0L,
                 false
         );
+    }
+
+    public void credit(long quantity) {
+        validateNotBlocked();
+        validatePositiveQuantity(quantity);
+
+        this.holdingQuantity += quantity;
+    }
+
+    private void validatePositiveQuantity(long quantity) {
+        if (quantity <= 0) {
+            throw new CustomException(INVALID_QUANTITY);
+        }
+    }
+
+    private void validateNotBlocked() {
+        if (this.blocked) {
+            throw new CustomException(STOCK_WALLET_SUSPENDED);
+        }
     }
 }

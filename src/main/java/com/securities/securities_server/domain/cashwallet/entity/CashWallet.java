@@ -112,7 +112,7 @@ public class CashWallet extends BaseEntity {
     }
 
     private void validateNotBlocked() {
-        if (blocked) {
+        if (this.blocked) {
             throw new CustomException(CASH_WALLET_SUSPENDED);
         }
     }

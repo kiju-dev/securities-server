@@ -3,6 +3,8 @@ package com.securities.securities_server.domain.stockwallet.service;
 import com.securities.securities_server.domain.stock.entity.Stock;
 import com.securities.securities_server.domain.stock.repository.StockRepository;
 import com.securities.securities_server.domain.stockwallet.controller.request.CreateStockWalletRequest;
+import com.securities.securities_server.domain.stockwallet.controller.request.CreditStockWalletRequest;
+import com.securities.securities_server.domain.stockwallet.controller.response.StockWalletQuantityResponse;
 import com.securities.securities_server.domain.stockwallet.entity.StockWallet;
 import com.securities.securities_server.domain.stockwallet.repository.StockWalletRepository;
 import com.securities.securities_server.domain.user.entity.User;
@@ -22,7 +24,9 @@ import java.util.Optional;
 
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_EXISTS;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.USER_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -117,6 +121,46 @@ class StockWalletServiceTest {
         }
     }
 
+    @Nested
+    class 입고_시 {
+
+        @Test
+        void 입고_수량만큼_보유_수량을_증가시키고_현재_보유_수량을_반환한다() {
+            // given
+            Long userId = 1L;
+            Long stockId = 1L;
+            Long stockWalletId = 1L;
+            StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
+            CreditStockWalletRequest request = new CreditStockWalletRequest(stockWallet.getId(), 10L);
+            given(stockWalletRepository.findByIdAndUserId(request.stockWalletId(), userId))
+                    .willReturn(Optional.of(stockWallet));
+
+            // when
+            StockWalletQuantityResponse response = stockWalletService.creditStockWallet(userId, request);
+
+            // then
+            assertThat(response.holdingQuantity()).isEqualTo(10L);
+        }
+
+        @Test
+        void 종목_계좌를_찾을_수_없으면_STOCK_WALLET_NOT_FOUND_예외가_발생한다() {
+            // given
+            Long userId = 1L;
+            Long stockId = 1L;
+            Long stockWalletId = 1L;
+            StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
+            CreditStockWalletRequest request = new CreditStockWalletRequest(stockWallet.getId(), 10L);
+            given(stockWalletRepository.findByIdAndUserId(request.stockWalletId(), userId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> stockWalletService.creditStockWallet(userId, request))
+                    .isInstanceOf(CustomException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(STOCK_WALLET_NOT_FOUND);
+        }
+    }
+
     private User createUser(Long userId) {
         User user = User.signUp("kiju", "kiju@gmail.com", "Passwo12!@");
         ReflectionTestUtils.setField(user, "id", userId);
@@ -127,5 +171,13 @@ class StockWalletServiceTest {
         Stock stock = new Stock("삼성전자", "001123");
         ReflectionTestUtils.setField(stock, "id", stockId);
         return stock;
+    }
+
+    private StockWallet createStockWallet(Long userId, Long stockId, Long stockWalletId) {
+        User user = createUser(userId);
+        Stock stock = createStock(stockId);
+        StockWallet stockWallet = StockWallet.create(user, stock);
+        ReflectionTestUtils.setField(stockWallet, "id", stockWalletId);
+        return stockWallet;
     }
 }

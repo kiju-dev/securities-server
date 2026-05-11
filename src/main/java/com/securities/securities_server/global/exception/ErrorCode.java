@@ -22,6 +22,9 @@ public enum ErrorCode {
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "CASH_007", "잔액이 부족합니다."),
 
     STOCK_WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "STOCK_WALLET_001", "이미 개설된 종목 계좌가 존재합니다."),
+    STOCK_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_WALLET_002", "종목 계좌를 찾을 수 없습니다."),
+    STOCK_WALLET_SUSPENDED(HttpStatus.FORBIDDEN, "STOCK_WALLET_003", "종목 계좌가 정지 상태입니다."),
+    INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "STOCK_WALLET_004", "수량은 0보다 커야 합니다."),
 
     STOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_001", "종목을 찾을 수 없습니다."),
 

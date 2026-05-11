@@ -2,6 +2,8 @@ package com.securities.securities_server.domain.stockwallet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.stockwallet.controller.request.CreateStockWalletRequest;
+import com.securities.securities_server.domain.stockwallet.controller.request.CreditStockWalletRequest;
+import com.securities.securities_server.domain.stockwallet.controller.response.StockWalletQuantityResponse;
 import com.securities.securities_server.domain.stockwallet.service.StockWalletService;
 import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.config.WebConfig;
@@ -21,6 +23,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_EXISTS;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_FOUND;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -87,6 +91,45 @@ class StockWalletControllerTest {
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.code").value("STOCK_WALLET_001"));
+        }
+    }
+
+    @Nested
+    class 입고_시 {
+
+        @Test
+        void 입고_후_보유_종목_수량을_반환한다() throws Exception {
+            // given
+            Long userId = 1L;
+            Long stockId = 1L;
+            CreditStockWalletRequest request = new CreditStockWalletRequest(stockId, 10L);
+            StockWalletQuantityResponse response = new StockWalletQuantityResponse(20L);
+            given(stockWalletService.creditStockWallet(userId, request)).willReturn(response);
+
+            // when & then
+            mockMvc.perform(post("/api/v1/stock-wallet/credit")
+                    .contentType(APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.holdingQuantity").value(20L));
+
+        }
+
+        @Test
+        void 종목_계좌를_찾을_수_없으면_예외가_발생한다() throws Exception {
+            // given
+            Long userId = 1L;
+            Long stockId = 1L;
+            CreditStockWalletRequest request = new CreditStockWalletRequest(stockId, 10L);
+            given(stockWalletService.creditStockWallet(userId, request))
+                    .willThrow(new CustomException(STOCK_WALLET_NOT_FOUND));
+
+            // when & then
+            mockMvc.perform(post("/api/v1/stock-wallet/credit")
+                    .contentType(APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("STOCK_WALLET_002"));
         }
     }
 }
