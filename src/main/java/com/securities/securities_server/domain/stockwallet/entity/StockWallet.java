@@ -80,6 +80,10 @@ public class StockWallet extends BaseEntity {
         this.holdingQuantity += quantity;
     }
 
+    public long getAvailableQuantity() {
+        return this.holdingQuantity - this.lockedQuantity;
+    }
+
     private void validatePositiveQuantity(long quantity) {
         if (quantity <= 0) {
             throw new CustomException(INVALID_QUANTITY);

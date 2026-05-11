@@ -2,11 +2,13 @@ package com.securities.securities_server.domain.stockwallet.controller;
 
 import com.securities.securities_server.domain.stockwallet.controller.request.CreateStockWalletRequest;
 import com.securities.securities_server.domain.stockwallet.controller.request.CreditStockWalletRequest;
-import com.securities.securities_server.domain.stockwallet.controller.response.StockWalletQuantityResponse;
+import com.securities.securities_server.domain.stockwallet.controller.response.StockWalletBalanceResponse;
 import com.securities.securities_server.domain.stockwallet.service.StockWalletService;
 import com.securities.securities_server.global.auth.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,11 +34,20 @@ public class StockWalletController {
     }
 
     @PostMapping("/credit")
-    public ResponseEntity<StockWalletQuantityResponse> creditStockWallet(
+    public ResponseEntity<StockWalletBalanceResponse> creditStockWallet(
             @AuthUser Long userId,
             @RequestBody CreditStockWalletRequest request
     ) {
-        StockWalletQuantityResponse response = stockWalletService.creditStockWallet(userId, request);
+        StockWalletBalanceResponse response = stockWalletService.creditStockWallet(userId, request);
+        return ResponseEntity.status(OK).body(response);
+    }
+
+    @GetMapping("/balance/{stockId}")
+    public ResponseEntity<StockWalletBalanceResponse> getBalanceStockWallet(
+            @AuthUser Long userId,
+            @PathVariable Long stockId
+    ) {
+        StockWalletBalanceResponse response = stockWalletService.getStockWalletBalance(userId, stockId);
         return ResponseEntity.status(OK).body(response);
     }
 }

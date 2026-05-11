@@ -4,7 +4,7 @@ import com.securities.securities_server.domain.stock.entity.Stock;
 import com.securities.securities_server.domain.stock.repository.StockRepository;
 import com.securities.securities_server.domain.stockwallet.controller.request.CreateStockWalletRequest;
 import com.securities.securities_server.domain.stockwallet.controller.request.CreditStockWalletRequest;
-import com.securities.securities_server.domain.stockwallet.controller.response.StockWalletQuantityResponse;
+import com.securities.securities_server.domain.stockwallet.controller.response.StockWalletBalanceResponse;
 import com.securities.securities_server.domain.stockwallet.entity.StockWallet;
 import com.securities.securities_server.domain.stockwallet.repository.StockWalletRepository;
 import com.securities.securities_server.domain.user.entity.User;
@@ -38,10 +38,16 @@ public class StockWalletService {
     }
 
     @Transactional
-    public StockWalletQuantityResponse creditStockWallet(Long userId, CreditStockWalletRequest request) {
+    public StockWalletBalanceResponse creditStockWallet(Long userId, CreditStockWalletRequest request) {
         StockWallet stockWallet = getStockWallet(request.stockWalletId(), userId);
         stockWallet.credit(request.quantity());
-        return new StockWalletQuantityResponse(stockWallet.getHoldingQuantity());
+        return StockWalletBalanceResponse.from(stockWallet);
+    }
+
+    @Transactional(readOnly = true)
+    public StockWalletBalanceResponse getStockWalletBalance(Long userId, Long stockId) {
+        StockWallet stockWallet = getStockWalletByUserIdAndStockId(userId, stockId);
+        return StockWalletBalanceResponse.from(stockWallet);
     }
 
     private void validateDuplicateStockWallet(Long userId, Long stockId) {
@@ -62,6 +68,11 @@ public class StockWalletService {
 
     private StockWallet getStockWallet(Long stockWalletId, Long userId) {
         return stockWalletRepository.findByIdAndUserId(stockWalletId, userId)
+                .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
+    }
+
+    private StockWallet getStockWalletByUserIdAndStockId(Long userId, Long stockId) {
+        return stockWalletRepository.findByUserIdAndStockId(userId, stockId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 }

@@ -89,6 +89,23 @@ class StockWalletTest {
                         .isEqualTo(INVALID_QUANTITY);
             }
         }
+
+        @Nested
+        class 조회_시 {
+
+            @Test
+            void 사용_가능한_수량은_보유_종목_수량에서_매도_주문으로_묶인_수량을_뺀_값이다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+                stockWallet.credit(10L);
+
+                // when
+                long availableQuantity = stockWallet.getAvailableQuantity();
+
+                // then
+                assertThat(availableQuantity).isEqualTo(10L);
+            }
+        }
     }
 
     private StockWallet createStockWallet() {

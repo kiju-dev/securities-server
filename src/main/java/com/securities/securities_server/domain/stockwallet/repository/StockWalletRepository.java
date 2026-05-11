@@ -12,4 +12,6 @@ public interface StockWalletRepository extends JpaRepository<StockWallet, Long> 
     boolean existsByUserIdAndStockId(Long userId, Long stockId);
 
     Optional<StockWallet> findByIdAndUserId(Long stockWalletId, Long userId);
+
+    Optional<StockWallet> findByUserIdAndStockId(Long userId, Long stockId);
 }

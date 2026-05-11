@@ -213,6 +213,23 @@ class CashWalletTest {
                 assertThat(cashWallet.isBlocked()).isFalse();
             }
         }
+
+        @Nested
+        class 조회_시 {
+
+            @Test
+            void availableAmount는_balance에서_lockedAmount를_뺀_값이다() {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(10000L);
+
+                // when
+                long availableAmount = cashWallet.getAvailableAmount();
+
+                // then
+                assertThat(availableAmount).isEqualTo(10000L);
+            }
+        }
     }
 
     private CashWallet createCashWallet() {
