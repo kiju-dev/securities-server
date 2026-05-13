@@ -42,10 +42,10 @@ class CashWalletHistoryRepositoryTest {
         );
 
         cashWalletHistoryRepository.save(
-                CashWalletHistory.createHistory(cashWallet1, DEPOSIT, 10000L, 20000L)
+                CashWalletHistory.create(cashWallet1, DEPOSIT, 10000L, 20000L)
         );
         cashWalletHistoryRepository.save(
-                CashWalletHistory.createHistory(cashWallet1, DEPOSIT, 30000L, 50000L)
+                CashWalletHistory.create(cashWallet1, DEPOSIT, 30000L, 50000L)
         );
         Pageable pageable = PageRequest.of(0, 1);
 

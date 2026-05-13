@@ -1,6 +1,7 @@
 package com.securities.securities_server.domain.authentication.entity;
 
 import com.securities.securities_server.domain.user.entity.User;
+import com.securities.securities_server.global.baseentity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +11,8 @@ import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -19,7 +22,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Authentication {
+@SQLDelete(sql = "UPDATE authentication SET deleted_at = now() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
+public class Authentication extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)

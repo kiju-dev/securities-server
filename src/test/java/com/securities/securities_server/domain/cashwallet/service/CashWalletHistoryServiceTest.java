@@ -96,9 +96,9 @@ class CashWalletHistoryServiceTest {
         // given
         CashWallet cashWallet = createCashWallet();
         CashWalletHistory history1 =
-                CashWalletHistory.createHistory(cashWallet, DEPOSIT, 10000L, 20000L);
+                CashWalletHistory.create(cashWallet, DEPOSIT, 10000L, 20000L);
         CashWalletHistory history2 =
-                CashWalletHistory.createHistory(cashWallet, DEPOSIT, 20000L, 40000L);
+                CashWalletHistory.create(cashWallet, DEPOSIT, 20000L, 40000L);
 
         Pageable pageable = PageRequest.of(0, 10);
 
