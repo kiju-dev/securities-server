@@ -38,11 +38,9 @@ public class TickSizeCalculator {
         }
     }
 
-    public long adjustAmount(long amount) {
+    public long adjustPrice(long amount) {
         long tickSize = getTickSize(amount);
         if (amount % tickSize != 0) {
-            System.out.println(tickSize);
-            System.out.println(amount / tickSize);
             return (amount / tickSize) * tickSize;
         } else {
             return amount;

@@ -93,7 +93,7 @@ class TickSizeCalculatorTest {
     @ValueSource(longs = {1000L, 2000L, 5000L, 20000L, 50000L, 200000L, 500000L})
     void 가격이_호가_단위에_맞으면_그대로_반환한다(long amount) {
         // when
-        long adjustAmount = tickSizeCalculator.adjustAmount(amount);
+        long adjustAmount = tickSizeCalculator.adjustPrice(amount);
 
         // then
         assertThat(adjustAmount).isEqualTo(amount);
@@ -113,7 +113,7 @@ class TickSizeCalculatorTest {
             long expectedAmount
     ) {
         // when
-        long adjustedAmount = tickSizeCalculator.adjustAmount(amount);
+        long adjustedAmount = tickSizeCalculator.adjustPrice(amount);
 
         // then
         assertThat(adjustedAmount).isEqualTo(expectedAmount);
