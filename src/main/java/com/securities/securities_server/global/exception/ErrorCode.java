@@ -30,7 +30,12 @@ public enum ErrorCode {
 
     STOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_001", "종목을 찾을 수 없습니다."),
 
+    MARKET_ALREADY_OPEN(HttpStatus.CONFLICT, "MARKET_001", "이미 개장된 장입니다."),
+    MARKET_ALREADY_CLOSE(HttpStatus.CONFLICT, "MARKET_002", "이미 폐장된 장입니다."),
+
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
+
+    EXCHANGE_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "EXCHANGE_SERVER_001", "거래소 서버 내부에 오류가 발생했습니다."),
     ;
 
     private final HttpStatus status;

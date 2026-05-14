@@ -20,3 +20,9 @@ spring:
 
 jwt:
   secret: my-secret-key-is-so-important-very-very-important-ok
+
+server:
+  port: 8080
+
+exchange:
+  url: http://localhost:8081
