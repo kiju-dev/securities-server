@@ -1,5 +1,6 @@
 package com.securities.securities_server.domain.market.client;
 
+import com.securities.securities_server.domain.market.controller.response.MarketCloseResponse;
 import com.securities.securities_server.domain.market.controller.response.MarketOpenResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,4 +13,7 @@ public interface ExchangeClient {
 
     @PostMapping("/market/open")
     MarketOpenResponse openMarket();
+
+    @PostMapping("/market/close")
+    MarketCloseResponse closeMarket();
 }

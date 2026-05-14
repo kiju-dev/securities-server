@@ -1,5 +1,6 @@
 package com.securities.securities_server.domain.market.controller;
 
+import com.securities.securities_server.domain.market.controller.response.MarketCloseResponse;
 import com.securities.securities_server.domain.market.controller.response.MarketOpenResponse;
 import com.securities.securities_server.domain.market.service.MarketService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,12 @@ public class MarketController {
     @PostMapping("/open")
     public ResponseEntity<MarketOpenResponse> openMarket() {
         MarketOpenResponse response = marketService.openMarket();
+        return ResponseEntity.status(OK).body(response);
+    }
+
+    @PostMapping("/close")
+    public ResponseEntity<MarketCloseResponse> closeMarket() {
+        MarketCloseResponse response = marketService.closeMarket();
         return ResponseEntity.status(OK).body(response);
     }
 }
