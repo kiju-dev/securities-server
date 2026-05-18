@@ -17,6 +17,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_HOLDING_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_LOCKED_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_SUSPENDED;
@@ -83,6 +84,13 @@ public class StockWallet extends BaseEntity {
         this.holdingQuantity += quantity;
     }
 
+    public void debit(long quantity) {
+        validateNotBlocked();
+        validatePositiveQuantity(quantity);
+
+        this.holdingQuantity -= quantity;
+    }
+
     public void lock(long quantity) {
         validateNotBlocked();
         validatePositiveQuantity(quantity);
@@ -90,6 +98,21 @@ public class StockWallet extends BaseEntity {
             throw new CustomException(INSUFFICIENT_HOLDING_QUANTITY);
         }
         this.lockedQuantity += quantity;
+    }
+
+    public void unlock(long quantity) {
+        validateNotBlocked();
+        validatePositiveQuantity(quantity);
+        validateSufficientLockedQuantity(quantity);
+        this.lockedQuantity -= quantity;
+    }
+
+    public void sellLockedQuantity(long quantity) {
+        validateNotBlocked();
+        validatePositiveQuantity(quantity);
+        validateSufficientLockedQuantity(quantity);
+        this.lockedQuantity -= quantity;
+        this.holdingQuantity -= quantity;
     }
 
     public long getAvailableQuantity() {
@@ -119,6 +142,12 @@ public class StockWallet extends BaseEntity {
     private void validatePositiveQuantity(long quantity) {
         if (quantity <= 0) {
             throw new CustomException(INVALID_QUANTITY);
+        }
+    }
+
+    private void validateSufficientLockedQuantity(long quantity) {
+        if (quantity > this.lockedQuantity) {
+            throw new CustomException(INSUFFICIENT_LOCKED_QUANTITY);
         }
     }
 }

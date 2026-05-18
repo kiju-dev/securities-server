@@ -13,6 +13,7 @@ import static com.securities.securities_server.global.exception.ErrorCode.CASH_W
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_BALANCE;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_LOCKED_AMOUNT;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_AMOUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -274,6 +275,99 @@ class CashWalletTest {
                         .isInstanceOf(CustomException.class)
                         .extracting("errorCode")
                         .isEqualTo(INSUFFICIENT_BALANCE);
+            }
+        }
+
+        @Nested
+        class 금액_잠금_해제_시 {
+
+            @Test
+            void 잠금_해제_요청_금액만큼_lockedAmount가_감소한다() {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(10000L);
+                cashWallet.lock(10000L);
+
+                // when
+                cashWallet.unlock(6000L);
+
+                // then
+                assertThat(cashWallet.getLockedAmount()).isEqualTo(4000L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-10000L, -400L, -1L, 0L})
+            void 잠금_해제_요청_금액이_0이거나_음수인_경우_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.unlock(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_AMOUNT);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {20001L, 30000L, 100000L})
+            void 잠금_해제_요청_금액이_잠긴_금액보다_크면_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(20000L);
+                cashWallet.lock(20000L);
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.unlock(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INSUFFICIENT_LOCKED_AMOUNT);
+            }
+        }
+
+        @Nested
+        class 매수_주문_체결_시 {
+
+            @Test
+            void 체결_금액만큼_lockedAmount와_balance를_감소시킨다() {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(20000L);
+                cashWallet.lock(10000L);
+
+                // when
+                cashWallet.payLockedAmount(10000L);
+
+                // then
+                assertThat(cashWallet.getBalance()).isEqualTo(10000L);
+                assertThat(cashWallet.getLockedAmount()).isEqualTo(0L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-10000L, -400L, -1L, 0L})
+            void 체결_금액이_0이거나_음수인_경우_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.payLockedAmount(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_AMOUNT);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {20001L, 30000L, 100000L})
+            void 체결_금액이_잠긴_금액보다_크면_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(20000L);
+                cashWallet.lock(20000L);
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.payLockedAmount(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INSUFFICIENT_LOCKED_AMOUNT);
             }
         }
     }

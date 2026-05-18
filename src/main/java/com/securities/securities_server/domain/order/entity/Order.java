@@ -3,6 +3,7 @@ package com.securities.securities_server.domain.order.entity;
 import com.securities.securities_server.domain.stock.entity.Stock;
 import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.global.baseentity.BaseEntity;
+import com.securities.securities_server.global.exception.CustomException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
@@ -17,6 +18,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_MATCH_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -88,5 +91,20 @@ public class Order extends BaseEntity {
                 quantity,
                 quantity
         );
+    }
+
+    public void fill(long quantity) {
+        validatePositiveQuantity(quantity);
+
+        if (quantity > this.unfilledQuantity) {
+            throw new CustomException(INVALID_MATCH_QUANTITY);
+        }
+        this.unfilledQuantity -= quantity;
+    }
+
+    private void validatePositiveQuantity(long quantity) {
+        if (quantity <= 0) {
+            throw new CustomException(INVALID_QUANTITY);
+        }
     }
 }

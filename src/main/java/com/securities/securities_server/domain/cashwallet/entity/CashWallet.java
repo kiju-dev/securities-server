@@ -19,6 +19,7 @@ import static com.securities.securities_server.global.exception.ErrorCode.CASH_W
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_BALANCE;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_LOCKED_AMOUNT;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_AMOUNT;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -97,6 +98,21 @@ public class CashWallet extends BaseEntity {
         this.lockedAmount += amount;
     }
 
+    public void unlock(long amount) {
+        validateNotBlocked();
+        validatePositiveAmount(amount);
+        validateSufficientLockedAmount(amount);
+        this.lockedAmount -= amount;
+    }
+
+    public void payLockedAmount(long amount){
+        validateNotBlocked();
+        validatePositiveAmount(amount);
+        validateSufficientLockedAmount(amount);
+        this.lockedAmount -= amount;
+        this.balance -= amount;
+    }
+
     public long getAvailableAmount() {
         return this.balance - this.lockedAmount;
     }
@@ -125,6 +141,12 @@ public class CashWallet extends BaseEntity {
         long availableAmount = getAvailableAmount();
         if (amount > availableAmount) {
             throw new CustomException(INSUFFICIENT_BALANCE);
+        }
+    }
+
+    private void validateSufficientLockedAmount(long amount) {
+        if (amount > this.lockedAmount) {
+            throw new CustomException(INSUFFICIENT_LOCKED_AMOUNT);
         }
     }
 

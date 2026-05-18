@@ -20,6 +20,7 @@ public enum ErrorCode {
     CASH_WALLET_NOT_SUSPENDED(HttpStatus.CONFLICT, "CASH_005", "이미 정지가 해제된 현금 계좌입니다."),
     CASH_WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "CASH_006", "이미 개설된 현금 계좌가 존재합니다."),
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "CASH_007", "잔액이 부족합니다."),
+    INSUFFICIENT_LOCKED_AMOUNT(HttpStatus.BAD_REQUEST, "CASH_008", "잠금 해제 가능한 금액을 초과했습니다."),
 
     STOCK_WALLET_ALREADY_EXISTS(HttpStatus.CONFLICT, "STOCK_WALLET_001", "이미 개설된 종목 계좌가 존재합니다."),
     STOCK_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_WALLET_002", "종목 계좌를 찾을 수 없습니다."),
@@ -28,6 +29,7 @@ public enum ErrorCode {
     STOCK_WALLET_ALREADY_SUSPENDED(HttpStatus.CONFLICT, "STOCK_WALLET_005", "이미 정지된 종목 계좌입니다."),
     STOCK_WALLET_NOT_SUSPENDED(HttpStatus.CONFLICT, "STOCK_WALLET_006", "이미 정지가 해제된 종목 계좌입니다."),
     INSUFFICIENT_HOLDING_QUANTITY(HttpStatus.BAD_REQUEST, "STOCK_WALLET_007", "종목 보유 수량이 부족합니다."),
+    INSUFFICIENT_LOCKED_QUANTITY(HttpStatus.BAD_REQUEST, "STOCK_WALLET_008", "잠금 해제 가능한 수량을 초과했습니다."),
 
     STOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_001", "종목을 찾을 수 없습니다."),
 
@@ -37,6 +39,7 @@ public enum ErrorCode {
 
     INVALID_ORDER_PRICE(HttpStatus.BAD_REQUEST, "ORDER_001", "유효하지 않은 주문 가격입니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_002", "주문을 찾을 수 없습니다."),
+    INVALID_MATCH_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_003", "유효하지 않은 체결 수량입니다."),
 
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
 

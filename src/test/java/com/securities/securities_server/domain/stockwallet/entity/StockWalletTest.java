@@ -11,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_HOLDING_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_LOCKED_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_SUSPENDED;
@@ -87,6 +88,36 @@ class StockWalletTest {
 
                 // when
                 assertThatThrownBy(() -> stockWallet.credit(quantity))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_QUANTITY);
+            }
+        }
+
+        @Nested
+        class 출고_시 {
+
+            @Test
+            void 출고_수량만큼_보유_수량이_감소한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+                stockWallet.credit(10L);
+
+                // when
+                stockWallet.debit(5L);
+
+                // then
+                assertThat(stockWallet.getHoldingQuantity()).isEqualTo(5L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-100L, -10L, 0})
+            void 출고_수량이_0이거나_음수인_경우에_INVALID_QUANTITY_예외가_발생한다(long quantity) {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when
+                assertThatThrownBy(() -> stockWallet.debit(quantity))
                         .isInstanceOf(CustomException.class)
                         .extracting("errorCode")
                         .isEqualTo(INVALID_QUANTITY);
@@ -208,6 +239,50 @@ class StockWalletTest {
                         .isInstanceOf(CustomException.class)
                         .extracting("errorCode")
                         .isEqualTo(INSUFFICIENT_HOLDING_QUANTITY);
+            }
+        }
+
+        @Nested
+        class 수량_잠금_해제_시 {
+
+            @Test
+            void 잠금_해제_요청_수량만큼_lockedQuantity가_감소한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+                stockWallet.credit(10L);
+                stockWallet.lock(5L);
+
+                // when
+                stockWallet.unlock(3L);
+
+                // then
+                assertThat(stockWallet.getLockedQuantity()).isEqualTo(2L);
+                assertThat(stockWallet.getAvailableQuantity()).isEqualTo(8L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-100L, -10L, 0})
+            void 잠금_해제_요청_수량이_0이거나_음수인_경우에_INVALID_QUANTITY_예외가_발생한다(long quantity) {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when & then
+                assertThatThrownBy(() -> stockWallet.unlock(quantity))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_QUANTITY);
+            }
+
+            @Test
+            void 잠금_해제_요청_수량이_잠긴_수량보다_크면_INSUFFICIENT_LOCKED_QUANTITY_예외가_발생한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when & then
+                assertThatThrownBy(() -> stockWallet.unlock(10L))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INSUFFICIENT_LOCKED_QUANTITY);
             }
         }
     }
