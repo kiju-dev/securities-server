@@ -2,7 +2,6 @@ package com.securities.securities_server.domain.market.entity;
 
 import com.securities.securities_server.domain.market.service.dto.MarketPriceInfo;
 import com.securities.securities_server.domain.stock.entity.Stock;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;

@@ -12,7 +12,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.securities.securities_server.domain.order.entity.OrderSide.BUY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_MATCH_QUANTITY;
-import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
