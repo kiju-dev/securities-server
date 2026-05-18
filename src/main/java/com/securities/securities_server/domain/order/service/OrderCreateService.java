@@ -49,8 +49,13 @@ public class OrderCreateService {
         Stock stock = getStock(request.stockId());
 
         CashWallet cashWallet = getCashWallet(userId);
-        StockWallet stockWallet = getStockWallet(userId, request.stockId());
-        validateWalletBlocked(cashWallet, stockWallet);
+        cashWallet.validateNotBlocked();
+
+        StockWallet stockWallet = null;
+        if (request.side() == SELL) {
+            stockWallet = getStockWallet(userId, request.stockId());
+            stockWallet.validateNotBlocked();
+        }
 
         LocalDate tradingDate = LocalDate.now();
         MarketStatus marketStatus = getMarketStatus(request.stockId(), tradingDate);
@@ -88,11 +93,6 @@ public class OrderCreateService {
     private StockWallet getStockWallet(Long userId, Long stockId) {
         return stockWalletRepository.findByUserIdAndStockId(userId, stockId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
-    }
-
-    private static void validateWalletBlocked(CashWallet cashWallet, StockWallet stockWallet) {
-        cashWallet.validateNotBlocked();
-        stockWallet.validateNotBlocked();
     }
 
     private MarketStatus getMarketStatus(Long stockId, LocalDate tradingDate) {

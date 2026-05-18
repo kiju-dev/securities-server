@@ -70,7 +70,6 @@ class OrderCreateServiceTest {
         User user = mock(User.class);
         Stock stock = mock(Stock.class);
         CashWallet cashWallet = mock(CashWallet.class);
-        StockWallet stockWallet = mock(StockWallet.class);
         MarketStatus marketStatus = mock(MarketStatus.class);
         PlaceOrderRequest request = new PlaceOrderRequest(
                 stockId,
@@ -81,7 +80,6 @@ class OrderCreateServiceTest {
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
         given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
-        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId)).willReturn(Optional.of(stockWallet));
         given(marketStatusRepository.findByStockIdAndTradingDate(eq(stockId), any(LocalDate.class)))
                 .willReturn(Optional.of(marketStatus));
         given(marketStatus.getLowerLimitPrice()).willReturn(9500L);

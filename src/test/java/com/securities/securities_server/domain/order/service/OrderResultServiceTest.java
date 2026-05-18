@@ -39,6 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings("NonAsciiCharacters")
@@ -335,6 +336,32 @@ class OrderResultServiceTest {
 
         assertThat(marketStatus.getTradingVolume()).isEqualTo(10L);
         assertThat(marketStatus.getTradingAmount()).isEqualTo(100000L);
+    }
+
+    @Test
+    void 거래소_응답이_UNMATCHED이면_추가_처리를_하지_않는다() {
+        // given
+        ExchangeOrderResponse response = new ExchangeOrderResponse(
+                MatchResult.UNMATCHED,
+                null,
+                List.of(),
+                0L,
+                0L
+        );
+
+        // when
+        orderResultService.handleExchangeOrderResponse(response, BUY);
+
+        // then
+        verifyNoInteractions(
+                orderRepository,
+                cashWalletRepository,
+                stockWalletRepository,
+                matchRepository,
+                marketStatusRepository,
+                cashWalletHistoryService,
+                stockWalletHistoryService
+        );
     }
 
     private User createUser(Long id, String name) {

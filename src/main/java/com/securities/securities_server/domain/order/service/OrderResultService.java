@@ -57,8 +57,6 @@ public class OrderResultService {
             return;
         } else if (response.matchResult() == MatchResult.MATCHED) {
             handleMatched(response, side);
-        } else if (response.matchResult() == MatchResult.CANCELLED) {
-            return;
         }
     }
 

@@ -4,5 +4,4 @@ public enum MatchResult {
 
     UNMATCHED,
     MATCHED,
-    CANCELLED
 }
