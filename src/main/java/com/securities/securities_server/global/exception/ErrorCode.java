@@ -27,11 +27,16 @@ public enum ErrorCode {
     INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "STOCK_WALLET_004", "수량은 0보다 커야 합니다."),
     STOCK_WALLET_ALREADY_SUSPENDED(HttpStatus.CONFLICT, "STOCK_WALLET_005", "이미 정지된 종목 계좌입니다."),
     STOCK_WALLET_NOT_SUSPENDED(HttpStatus.CONFLICT, "STOCK_WALLET_006", "이미 정지가 해제된 종목 계좌입니다."),
+    INSUFFICIENT_HOLDING_QUANTITY(HttpStatus.BAD_REQUEST, "STOCK_WALLET_007", "종목 보유 수량이 부족합니다."),
 
     STOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "STOCK_001", "종목을 찾을 수 없습니다."),
 
     MARKET_ALREADY_OPEN(HttpStatus.CONFLICT, "MARKET_001", "이미 개장된 장입니다."),
     MARKET_ALREADY_CLOSE(HttpStatus.CONFLICT, "MARKET_002", "이미 폐장된 장입니다."),
+    MARKET_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "MARKET_003", "시세 정보를 찾을 수 없습니다."),
+
+    INVALID_ORDER_PRICE(HttpStatus.BAD_REQUEST, "ORDER_001", "유효하지 않은 주문 가격입니다."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_002", "주문을 찾을 수 없습니다."),
 
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
 

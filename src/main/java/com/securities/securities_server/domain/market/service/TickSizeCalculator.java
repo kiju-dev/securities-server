@@ -46,4 +46,9 @@ public class TickSizeCalculator {
             return amount;
         }
     }
+
+    public boolean validatePrice(long amount) {
+        long tickSize = getTickSize(amount);
+        return amount % tickSize == 0;
+    }
 }

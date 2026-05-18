@@ -86,11 +86,15 @@ public class CashWallet extends BaseEntity {
     public void withdraw(long amount) {
         validateNotBlocked();
         validatePositiveAmount(amount);
-        long availableAmount = getAvailableAmount();
-        if (amount > availableAmount) {
-            throw new CustomException(INSUFFICIENT_BALANCE);
-        }
+        validateSufficientBalance(amount);
         this.balance -= amount;
+    }
+
+    public void lock(long amount) {
+        validateNotBlocked();
+        validatePositiveAmount(amount);
+        validateSufficientBalance(amount);
+        this.lockedAmount += amount;
     }
 
     public long getAvailableAmount() {
@@ -111,9 +115,16 @@ public class CashWallet extends BaseEntity {
         this.blocked = false;
     }
 
-    private void validateNotBlocked() {
+    public void validateNotBlocked() {
         if (this.blocked) {
             throw new CustomException(CASH_WALLET_SUSPENDED);
+        }
+    }
+
+    private void validateSufficientBalance(long amount) {
+        long availableAmount = getAvailableAmount();
+        if (amount > availableAmount) {
+            throw new CustomException(INSUFFICIENT_BALANCE);
         }
     }
 

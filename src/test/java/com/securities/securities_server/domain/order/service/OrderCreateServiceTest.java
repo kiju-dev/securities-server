@@ -1,0 +1,221 @@
+package com.securities.securities_server.domain.order.service;
+
+import com.securities.securities_server.domain.cashwallet.entity.CashWallet;
+import com.securities.securities_server.domain.cashwallet.repository.CashWalletRepository;
+import com.securities.securities_server.domain.market.entity.MarketStatus;
+import com.securities.securities_server.domain.market.repository.MarketStatusRepository;
+import com.securities.securities_server.domain.market.service.TickSizeCalculator;
+import com.securities.securities_server.domain.order.controller.request.PlaceOrderRequest;
+import com.securities.securities_server.domain.order.entity.Order;
+import com.securities.securities_server.domain.order.repository.OrderRepository;
+import com.securities.securities_server.domain.stock.entity.Stock;
+import com.securities.securities_server.domain.stock.repository.StockRepository;
+import com.securities.securities_server.domain.stockwallet.entity.StockWallet;
+import com.securities.securities_server.domain.stockwallet.repository.StockWalletRepository;
+import com.securities.securities_server.domain.user.entity.User;
+import com.securities.securities_server.domain.user.repository.UserRepository;
+import com.securities.securities_server.global.exception.CustomException;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static com.securities.securities_server.domain.order.entity.OrderSide.BUY;
+import static com.securities.securities_server.domain.order.entity.OrderSide.SELL;
+import static com.securities.securities_server.global.exception.ErrorCode.INVALID_ORDER_PRICE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+@SuppressWarnings("NonAsciiCharacters")
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+class OrderCreateServiceTest {
+
+    @Mock
+    OrderRepository orderRepository;
+    @Mock
+    UserRepository userRepository;
+    @Mock
+    StockRepository stockRepository;
+    @Mock
+    CashWalletRepository cashWalletRepository;
+    @Mock
+    StockWalletRepository stockWalletRepository;
+    @Mock
+    MarketStatusRepository marketStatusRepository;
+    @Mock
+    TickSizeCalculator tickSizeCalculator;
+
+    @InjectMocks
+    OrderCreateService orderCreateService;
+
+    @Test
+    void 매수_주문_생성_시_현금_계좌_잔액을_lock하고_주문을_저장한다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+
+        User user = mock(User.class);
+        Stock stock = mock(Stock.class);
+        CashWallet cashWallet = mock(CashWallet.class);
+        StockWallet stockWallet = mock(StockWallet.class);
+        MarketStatus marketStatus = mock(MarketStatus.class);
+        PlaceOrderRequest request = new PlaceOrderRequest(
+                stockId,
+                BUY,
+                10000L,
+                3L
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
+        given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
+        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId)).willReturn(Optional.of(stockWallet));
+        given(marketStatusRepository.findByStockIdAndTradingDate(eq(stockId), any(LocalDate.class)))
+                .willReturn(Optional.of(marketStatus));
+        given(marketStatus.getLowerLimitPrice()).willReturn(9500L);
+        given(marketStatus.getUpperLimitPrice()).willReturn(10500L);
+        given(tickSizeCalculator.validatePrice(10000L)).willReturn(true);
+
+        // when
+        orderCreateService.createOrder(userId, request);
+
+        // then
+        ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+
+        verify(orderRepository).save(captor.capture());
+
+        Order savedOrder = captor.getValue();
+
+        assertThat(savedOrder.getPrice()).isEqualTo(10000L);
+        assertThat(savedOrder.getQuantity()).isEqualTo(3L);
+        assertThat(savedOrder.getSide()).isEqualTo(BUY);
+        assertThat(savedOrder.getUnfilledQuantity()).isEqualTo(3L);
+        assertThat(savedOrder.getCanceledQuantity()).isEqualTo(0L);
+        verify(cashWallet).lock(30000L);
+    }
+
+    @Test
+    void 매도_주문_생성_시_종목_계좌_수량을_lock하고_주문을_저장한다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+
+        User user = mock(User.class);
+        Stock stock = mock(Stock.class);
+        CashWallet cashWallet = mock(CashWallet.class);
+        StockWallet stockWallet = mock(StockWallet.class);
+        MarketStatus marketStatus = mock(MarketStatus.class);
+        PlaceOrderRequest request = new PlaceOrderRequest(
+                stockId,
+                SELL,
+                10000L,
+                3L
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
+        given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
+        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId)).willReturn(Optional.of(stockWallet));
+        given(marketStatusRepository.findByStockIdAndTradingDate(eq(stockId), any(LocalDate.class)))
+                .willReturn(Optional.of(marketStatus));
+        given(marketStatus.getLowerLimitPrice()).willReturn(9500L);
+        given(marketStatus.getUpperLimitPrice()).willReturn(10500L);
+        given(tickSizeCalculator.validatePrice(10000L)).willReturn(true);
+
+        // when
+        orderCreateService.createOrder(userId, request);
+
+        // then
+        ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+
+        verify(orderRepository).save(captor.capture());
+
+        Order savedOrder = captor.getValue();
+
+        assertThat(savedOrder.getPrice()).isEqualTo(10000L);
+        assertThat(savedOrder.getQuantity()).isEqualTo(3L);
+        assertThat(savedOrder.getSide()).isEqualTo(SELL);
+        assertThat(savedOrder.getUnfilledQuantity()).isEqualTo(3L);
+        assertThat(savedOrder.getCanceledQuantity()).isEqualTo(0L);
+        verify(stockWallet).lock(3L);
+    }
+
+    @Test
+    void 주문_가격이_호가_단위에_맞지_않으면_INVALID_ORDER_PRICE_예외가_발생한다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+
+        User user = mock(User.class);
+        Stock stock = mock(Stock.class);
+        CashWallet cashWallet = mock(CashWallet.class);
+        StockWallet stockWallet = mock(StockWallet.class);
+        MarketStatus marketStatus = mock(MarketStatus.class);
+        PlaceOrderRequest request = new PlaceOrderRequest(
+                stockId,
+                SELL,
+                10002L,
+                3L
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
+        given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
+        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId)).willReturn(Optional.of(stockWallet));
+        given(marketStatusRepository.findByStockIdAndTradingDate(eq(stockId), any(LocalDate.class)))
+                .willReturn(Optional.of(marketStatus));
+        given(marketStatus.getLowerLimitPrice()).willReturn(9500L);
+        given(marketStatus.getUpperLimitPrice()).willReturn(10500L);
+        given(tickSizeCalculator.validatePrice(10002L)).willReturn(false);
+
+        // when
+        assertThatThrownBy(() -> orderCreateService.createOrder(userId, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(INVALID_ORDER_PRICE);
+    }
+
+    @Test
+    void 주문_가격이_상하한가_범위를_벗어나면_INVALID_ORDER_PRICE_예외가_발생한다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+
+        User user = mock(User.class);
+        Stock stock = mock(Stock.class);
+        CashWallet cashWallet = mock(CashWallet.class);
+        StockWallet stockWallet = mock(StockWallet.class);
+        MarketStatus marketStatus = mock(MarketStatus.class);
+        PlaceOrderRequest request = new PlaceOrderRequest(
+                stockId,
+                SELL,
+                14000L,
+                3L
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
+        given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
+        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId)).willReturn(Optional.of(stockWallet));
+        given(marketStatusRepository.findByStockIdAndTradingDate(eq(stockId), any(LocalDate.class)))
+                .willReturn(Optional.of(marketStatus));
+        given(marketStatus.getLowerLimitPrice()).willReturn(9500L);
+        given(marketStatus.getUpperLimitPrice()).willReturn(10500L);
+        given(tickSizeCalculator.validatePrice(14000L)).willReturn(true);
+
+        // when
+        assertThatThrownBy(() -> orderCreateService.createOrder(userId, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(INVALID_ORDER_PRICE);
+    }
+}

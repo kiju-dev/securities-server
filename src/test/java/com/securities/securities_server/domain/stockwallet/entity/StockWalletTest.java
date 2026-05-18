@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_HOLDING_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_SUSPENDED;
@@ -164,6 +165,49 @@ class StockWalletTest {
                         .isInstanceOf(CustomException.class)
                         .extracting("errorCode")
                         .isEqualTo(STOCK_WALLET_NOT_SUSPENDED);
+            }
+        }
+
+        @Nested
+        class 수량_잠금_시 {
+
+            @Test
+            void 잠금_요청_수량만큼_lockedQuantity가_증가한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+                stockWallet.credit(10L);
+
+                // when
+                stockWallet.lock(5L);
+
+                // then
+                assertThat(stockWallet.getLockedQuantity()).isEqualTo(5L);
+                assertThat(stockWallet.getAvailableQuantity()).isEqualTo(5L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-100L, -10L, 0})
+            void 잠금_요청_수량이_0이거나_음수인_경우에_INVALID_QUANTITY_예외가_발생한다(long quantity) {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when & then
+                assertThatThrownBy(() -> stockWallet.lock(quantity))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_QUANTITY);
+            }
+
+            @Test
+            void 잠금_요청_수량이_사용_가능한_수량보다_크면_INSUFFICIENT_HOLDING_QUANTITY_예외가_발생한다() {
+                // given
+                StockWallet stockWallet = createStockWallet();
+
+                // when & then
+                assertThatThrownBy(() -> stockWallet.lock(10L))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INSUFFICIENT_HOLDING_QUANTITY);
             }
         }
     }

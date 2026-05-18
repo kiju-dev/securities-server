@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import static com.securities.securities_server.global.exception.ErrorCode.INSUFFICIENT_HOLDING_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_ALREADY_SUSPENDED;
 import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_NOT_SUSPENDED;
@@ -82,6 +83,15 @@ public class StockWallet extends BaseEntity {
         this.holdingQuantity += quantity;
     }
 
+    public void lock(long quantity) {
+        validateNotBlocked();
+        validatePositiveQuantity(quantity);
+        if (quantity > getAvailableQuantity()) {
+            throw new CustomException(INSUFFICIENT_HOLDING_QUANTITY);
+        }
+        this.lockedQuantity += quantity;
+    }
+
     public long getAvailableQuantity() {
         return this.holdingQuantity - this.lockedQuantity;
     }
@@ -100,15 +110,15 @@ public class StockWallet extends BaseEntity {
         this.blocked = false;
     }
 
-    private void validatePositiveQuantity(long quantity) {
-        if (quantity <= 0) {
-            throw new CustomException(INVALID_QUANTITY);
+    public void validateNotBlocked() {
+        if (this.blocked) {
+            throw new CustomException(STOCK_WALLET_SUSPENDED);
         }
     }
 
-    private void validateNotBlocked() {
-        if (this.blocked) {
-            throw new CustomException(STOCK_WALLET_SUSPENDED);
+    private void validatePositiveQuantity(long quantity) {
+        if (quantity <= 0) {
+            throw new CustomException(INVALID_QUANTITY);
         }
     }
 }

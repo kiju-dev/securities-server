@@ -1,7 +1,9 @@
-package com.securities.securities_server.domain.market.client;
+package com.securities.securities_server.global.external.client;
 
 import com.securities.securities_server.domain.market.controller.response.MarketCloseResponse;
 import com.securities.securities_server.domain.market.controller.response.MarketOpenResponse;
+import com.securities.securities_server.global.external.client.request.ExchangeOrderRequest;
+import com.securities.securities_server.global.external.client.response.ExchangeOrderResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -16,4 +18,7 @@ public interface ExchangeClient {
 
     @PostMapping("/market/close")
     MarketCloseResponse closeMarket();
+
+    @PostMapping("/market/order")
+    ExchangeOrderResponse order(ExchangeOrderRequest request);
 }

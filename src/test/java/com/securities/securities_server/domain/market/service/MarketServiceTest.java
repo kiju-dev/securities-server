@@ -1,6 +1,6 @@
 package com.securities.securities_server.domain.market.service;
 
-import com.securities.securities_server.domain.market.client.ExchangeClient;
+import com.securities.securities_server.global.external.client.ExchangeClient;
 import com.securities.securities_server.domain.market.controller.response.MarketOpenResponse;
 import com.securities.securities_server.global.exception.CustomException;
 import feign.FeignException;

@@ -222,12 +222,58 @@ class CashWalletTest {
                 // given
                 CashWallet cashWallet = createCashWallet();
                 cashWallet.deposit(10000L);
+                cashWallet.lock(5000L);
 
                 // when
                 long availableAmount = cashWallet.getAvailableAmount();
 
                 // then
-                assertThat(availableAmount).isEqualTo(10000L);
+                assertThat(availableAmount).isEqualTo(5000L);
+            }
+        }
+
+        @Nested
+        class 금액_잠금_시 {
+
+            @Test
+            void 잠금_요청_금액만큼_lockedAmount가_증가한다() {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(50000L);
+
+                // when
+                cashWallet.lock(20000L);
+
+                // then
+                assertThat(cashWallet.getLockedAmount()).isEqualTo(20000L);
+                assertThat(cashWallet.getAvailableAmount()).isEqualTo(30000L);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {-10000L, -400L, -1L, 0L})
+            void 잠금_요청_금액이_0이거나_음수인_경우_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.lock(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INVALID_AMOUNT);
+            }
+
+            @ParameterizedTest
+            @ValueSource(longs = {20001L, 30000L, 100000L})
+            void 잠금_요청_금액이_사용가능한_잔액보다_크면_예외가_발생한다(long amount) {
+                // given
+                CashWallet cashWallet = createCashWallet();
+                cashWallet.deposit(20000L);
+
+                // when & then
+                assertThatThrownBy(() -> cashWallet.lock(amount))
+                        .isInstanceOf(CustomException.class)
+                        .extracting("errorCode")
+                        .isEqualTo(INSUFFICIENT_BALANCE);
             }
         }
     }
