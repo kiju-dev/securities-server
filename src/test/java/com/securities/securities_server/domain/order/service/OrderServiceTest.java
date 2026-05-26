@@ -3,8 +3,11 @@ package com.securities.securities_server.domain.order.service;
 import com.securities.securities_server.domain.order.controller.request.PlaceOrderRequest;
 import com.securities.securities_server.domain.order.controller.response.CancelOrderResponse;
 import com.securities.securities_server.domain.order.controller.response.PlaceOrderResponse;
+import com.securities.securities_server.domain.order.controller.response.UnfilledOrderResponse;
 import com.securities.securities_server.domain.order.entity.Order;
+import com.securities.securities_server.domain.order.entity.OrderSide;
 import com.securities.securities_server.domain.order.repository.OrderRepository;
+import com.securities.securities_server.domain.stock.entity.Stock;
 import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.global.external.client.response.ExchangeOrderResponse;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -14,7 +17,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -118,5 +126,68 @@ class OrderServiceTest {
         verify(orderRepository).findById(orderId);
         verify(exchangeOrderService).cancelOrder(orderId);
         verify(orderResultService).handleExchangeOrderResponse(exchangeOrderResponse, orderId);
+    }
+
+    @Test
+    void 미체결_주문_내역을_페이지로_조회한다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+        OrderSide side = BUY;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Stock stock = mock(Stock.class);
+        given(stock.getId()).willReturn(stockId);
+
+        Order order1 = mock(Order.class);
+        given(order1.getStock()).willReturn(stock);
+        given(order1.getId()).willReturn(10L);
+        given(order1.getSide()).willReturn(BUY);
+        given(order1.getPrice()).willReturn(10000L);
+        given(order1.getUnfilledQuantity()).willReturn(3L);
+        given(order1.getCreatedAt()).willReturn(LocalDateTime.now());
+
+        Order order2 = mock(Order.class);
+        given(order2.getStock()).willReturn(stock);
+        given(order2.getId()).willReturn(11L);
+        given(order2.getSide()).willReturn(BUY);
+        given(order2.getPrice()).willReturn(11000L);
+        given(order2.getUnfilledQuantity()).willReturn(5L);
+        given(order2.getCreatedAt()).willReturn(LocalDateTime.now());
+
+        Page<Order> orderPage = new PageImpl<>(
+                List.of(order1, order2),
+                pageable,
+                2
+        );
+
+        given(orderRepository.findByUserIdAndStockIdAndSideAndUnfilledQuantityGreaterThan(
+                userId,
+                stockId,
+                side,
+                0L,
+                pageable
+        )).willReturn(orderPage);
+
+        // when
+        UnfilledOrderResponse response =
+                orderService.getUnfilledOrder(userId, stockId, side, pageable);
+
+        // then
+        assertThat(response.totalElements()).isEqualTo(2);
+        assertThat(response.unfilledOrderList()).hasSize(2);
+        assertThat(response.unfilledOrderList().getFirst().stockId()).isEqualTo(stockId);
+        assertThat(response.unfilledOrderList().getFirst().orderId()).isEqualTo(10L);
+        assertThat(response.unfilledOrderList().getFirst().side()).isEqualTo(BUY);
+        assertThat(response.unfilledOrderList().getFirst().price()).isEqualTo(10000L);
+        assertThat(response.unfilledOrderList().getFirst().unfilledQuantity()).isEqualTo(3L);
+
+        verify(orderRepository).findByUserIdAndStockIdAndSideAndUnfilledQuantityGreaterThan(
+                userId,
+                stockId,
+                side,
+                0L,
+                pageable
+        );
     }
 }

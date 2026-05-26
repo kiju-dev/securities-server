@@ -3,11 +3,16 @@ package com.securities.securities_server.domain.order.service;
 import com.securities.securities_server.domain.order.controller.request.PlaceOrderRequest;
 import com.securities.securities_server.domain.order.controller.response.CancelOrderResponse;
 import com.securities.securities_server.domain.order.controller.response.PlaceOrderResponse;
+import com.securities.securities_server.domain.order.controller.response.UnfilledOrder;
+import com.securities.securities_server.domain.order.controller.response.UnfilledOrderResponse;
 import com.securities.securities_server.domain.order.entity.Order;
+import com.securities.securities_server.domain.order.entity.OrderSide;
 import com.securities.securities_server.domain.order.repository.OrderRepository;
 import com.securities.securities_server.global.exception.CustomException;
 import com.securities.securities_server.global.external.client.response.ExchangeOrderResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import static com.securities.securities_server.global.exception.ErrorCode.FORBIDDEN_ORDER_ACCESS;
@@ -37,6 +42,17 @@ public class OrderService {
 
         orderResultService.handleExchangeOrderResponse(exchangeOrderResponse, orderId);
         return new CancelOrderResponse(orderId, exchangeOrderResponse.matchResult());
+    }
+
+    public UnfilledOrderResponse getUnfilledOrder(Long userId, Long stockId, OrderSide side, Pageable pageable) {
+        Page<UnfilledOrder> unfilledOrders =
+                orderRepository.findByUserIdAndStockIdAndSideAndUnfilledQuantityGreaterThan(userId, stockId, side, 0L, pageable)
+                .map(UnfilledOrder::from);
+
+        return new UnfilledOrderResponse(
+                unfilledOrders.getTotalElements(),
+                unfilledOrders.getContent()
+        );
     }
 
     private void validateOwner(Long userId, Long orderId) {
