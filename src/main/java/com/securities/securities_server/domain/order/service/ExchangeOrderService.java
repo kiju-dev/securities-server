@@ -4,6 +4,7 @@ import com.securities.securities_server.domain.order.entity.Order;
 import com.securities.securities_server.domain.order.repository.OrderRepository;
 import com.securities.securities_server.global.exception.CustomException;
 import com.securities.securities_server.global.external.client.ExchangeClient;
+import com.securities.securities_server.global.external.client.request.ExchangeCancelRequest;
 import com.securities.securities_server.global.external.client.request.ExchangeOrderRequest;
 import com.securities.securities_server.global.external.client.response.ExchangeOrderResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,13 @@ public class ExchangeOrderService {
 
         ExchangeOrderRequest exchangeOrderRequest = ExchangeOrderRequest.from(order);
         return exchangeClient.order(exchangeOrderRequest);
+    }
+
+    public ExchangeOrderResponse cancelOrder(Long orderId) {
+        Order order = getOrder(orderId);
+
+        ExchangeCancelRequest exchangeCancelRequest = ExchangeCancelRequest.from(order);
+        return exchangeClient.cancel(exchangeCancelRequest);
     }
 
     private Order getOrder(Long orderId){

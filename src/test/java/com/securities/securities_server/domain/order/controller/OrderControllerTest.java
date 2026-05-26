@@ -2,6 +2,7 @@ package com.securities.securities_server.domain.order.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.order.controller.request.PlaceOrderRequest;
+import com.securities.securities_server.domain.order.controller.response.CancelOrderResponse;
 import com.securities.securities_server.domain.order.controller.response.PlaceOrderResponse;
 import com.securities.securities_server.domain.order.service.OrderService;
 import com.securities.securities_server.global.auth.JwtProvider;
@@ -19,10 +20,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static com.securities.securities_server.domain.order.entity.MatchResult.CANCELLED;
 import static com.securities.securities_server.domain.order.entity.MatchResult.MATCHED;
 import static com.securities.securities_server.domain.order.entity.OrderSide.BUY;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -65,6 +68,21 @@ class OrderControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(response.orderId()))
-                .andExpect(jsonPath("$.result").value("MATCHED"));
+                .andExpect(jsonPath("$.matchResult").value("MATCHED"));
+    }
+
+    @Test
+    void 주문_취소_요청_시_주문_취소_응답을_반환한다() throws Exception {
+        // given
+        Long userId = 1L;
+        Long orderId = 1L;
+        CancelOrderResponse response = new CancelOrderResponse(orderId, CANCELLED);
+        given(orderService.cancelOrder(userId, orderId)).willReturn(response);
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/order/{orderId}", orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(response.orderId()))
+                .andExpect(jsonPath("$.matchResult").value("CANCELLED"));
     }
 }

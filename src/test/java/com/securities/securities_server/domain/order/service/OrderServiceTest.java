@@ -1,8 +1,11 @@
 package com.securities.securities_server.domain.order.service;
 
 import com.securities.securities_server.domain.order.controller.request.PlaceOrderRequest;
+import com.securities.securities_server.domain.order.controller.response.CancelOrderResponse;
 import com.securities.securities_server.domain.order.controller.response.PlaceOrderResponse;
 import com.securities.securities_server.domain.order.entity.Order;
+import com.securities.securities_server.domain.order.repository.OrderRepository;
+import com.securities.securities_server.domain.user.entity.User;
 import com.securities.securities_server.global.external.client.response.ExchangeOrderResponse;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -13,7 +16,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
+import static com.securities.securities_server.domain.order.entity.MatchResult.CANCELLED;
 import static com.securities.securities_server.domain.order.entity.MatchResult.MATCHED;
 import static com.securities.securities_server.domain.order.entity.OrderSide.BUY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +39,9 @@ class OrderServiceTest {
 
     @Mock
     OrderResultService orderResultService;
+
+    @Mock
+    OrderRepository orderRepository;
 
     @InjectMocks
     private OrderService orderService;
@@ -70,10 +78,45 @@ class OrderServiceTest {
 
         // then
         assertThat(response.orderId()).isEqualTo(orderId);
-        assertThat(response.result()).isEqualTo(MATCHED);
+        assertThat(response.matchResult()).isEqualTo(MATCHED);
 
         verify(orderCreateService).createOrder(userId, request);
         verify(exchangeOrderService).sendOrder(orderId);
-        verify(orderResultService).handleExchangeOrderResponse(exchangeOrderResponse, BUY);
+        verify(orderResultService).handleExchangeOrderResponse(exchangeOrderResponse, orderId);
+    }
+
+    @Test
+    void 거래소에_주문_취소_요청을_전송한_뒤_결과를_반영하고_응답을_반환한다() {
+        // given
+        Long userId = 1L;
+        Long orderId = 10L;
+
+        Order order = mock(Order.class);
+        User user = mock(User.class);
+
+        given(order.getUser()).willReturn(user);
+        given(user.getId()).willReturn(userId);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        ExchangeOrderResponse exchangeOrderResponse = new ExchangeOrderResponse(
+                CANCELLED,
+                null,
+                List.of(),
+                0L,
+                0L
+        );
+
+        given(exchangeOrderService.cancelOrder(orderId)).willReturn(exchangeOrderResponse);
+
+        // when
+        CancelOrderResponse response = orderService.cancelOrder(userId, orderId);
+
+        // then
+        assertThat(response.orderId()).isEqualTo(orderId);
+        assertThat(response.matchResult()).isEqualTo(CANCELLED);
+
+        verify(orderRepository).findById(orderId);
+        verify(exchangeOrderService).cancelOrder(orderId);
+        verify(orderResultService).handleExchangeOrderResponse(exchangeOrderResponse, orderId);
     }
 }

@@ -9,9 +9,7 @@ import com.securities.securities_server.domain.market.entity.MarketStatus;
 import com.securities.securities_server.domain.market.repository.MarketStatusRepository;
 import com.securities.securities_server.domain.match.entity.Match;
 import com.securities.securities_server.domain.match.repository.MatchRepository;
-import com.securities.securities_server.domain.order.entity.MatchResult;
 import com.securities.securities_server.domain.order.entity.Order;
-import com.securities.securities_server.domain.order.entity.OrderSide;
 import com.securities.securities_server.domain.order.repository.OrderRepository;
 import com.securities.securities_server.domain.stock.entity.Stock;
 import com.securities.securities_server.domain.stockwallet.entity.StockWallet;
@@ -30,9 +28,15 @@ import java.time.LocalDate;
 
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.TRADE_PAY;
 import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.TRADE_RECEIVE;
+import static com.securities.securities_server.domain.cashwallet.entity.CashWalletTxType.TRADE_REFUND;
+import static com.securities.securities_server.domain.order.entity.MatchResult.CANCELLED;
+import static com.securities.securities_server.domain.order.entity.MatchResult.MATCHED;
+import static com.securities.securities_server.domain.order.entity.MatchResult.UNMATCHED;
+import static com.securities.securities_server.domain.order.entity.OrderSide.BUY;
 import static com.securities.securities_server.domain.order.entity.OrderSide.SELL;
 import static com.securities.securities_server.domain.stockwallet.entity.StockWalletTxType.BUY_EXECUTED;
 import static com.securities.securities_server.domain.stockwallet.entity.StockWalletTxType.SELL_EXECUTED;
+import static com.securities.securities_server.domain.stockwallet.entity.StockWalletTxType.SELL_ORDER_CANCELED;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_STATUS_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.ORDER_NOT_FOUND;
@@ -52,23 +56,25 @@ public class OrderResultService {
     private final StockWalletHistoryService stockWalletHistoryService;
 
     @Transactional
-    public void handleExchangeOrderResponse(ExchangeOrderResponse response, OrderSide side) {
-        if (response.matchResult() == MatchResult.UNMATCHED) {
-            return;
-        } else if (response.matchResult() == MatchResult.MATCHED) {
-            handleMatched(response, side);
+    public void handleExchangeOrderResponse(ExchangeOrderResponse response, Long orderId) {
+        if (response.matchResult() == UNMATCHED) {
+        } else if (response.matchResult() == MATCHED) {
+            handleMatched(response, orderId);
+        } else if (response.matchResult() == CANCELLED) {
+            handleCancelled(orderId);
         }
     }
 
-    private void handleMatched(ExchangeOrderResponse response, OrderSide side) {
-        Order takerOrder = getOrder(response.takerOrderId());
+    private void handleMatched(ExchangeOrderResponse response, Long orderId) {
+        Order takerOrder = getOrder(orderId);
 
         for (MakerOrderList maker : response.makers()) {
             Order makerOrder = getOrder(maker.orderId());
 
             Order buyerOrder;
             Order sellerOrder;
-            if (side == SELL) {
+
+            if (takerOrder.getSide() == SELL) {
                 sellerOrder = takerOrder;
                 buyerOrder = makerOrder;
             } else {
@@ -82,6 +88,42 @@ public class OrderResultService {
             saveMatch(makerOrder, takerOrder);
             updateMarketStatus(takerOrder.getStock(), response.price(), matchedQuantity);
         }
+    }
+
+    private void handleCancelled(Long orderId) {
+        Order order = getOrder(orderId);
+        if (order.getSide() == BUY) {
+            cancelBuyOrder(order);
+        } else {
+            cancelSellOrder(order);
+        }
+    }
+
+    private void cancelSellOrder(Order order) {
+        StockWallet stockWallet = getSellerStockWallet(order);
+        long cancelQuantity = order.getUnfilledQuantity();
+
+        order.cancelRemainingQuantity();
+        stockWallet.unlock(cancelQuantity);
+        StockWalletHistoryCommand command =
+                new StockWalletHistoryCommand(
+                        stockWallet,
+                        SELL_ORDER_CANCELED,
+                        cancelQuantity,
+                        stockWallet.getHoldingQuantity()
+                );
+        stockWalletHistoryService.createStockWalletHistory(command);
+    }
+
+    private void cancelBuyOrder(Order order) {
+        CashWallet cashWallet = getCashWallet(order);
+        long cancelAmount = order.getPrice() * order.getUnfilledQuantity();
+
+        order.cancelRemainingQuantity();
+        cashWallet.unlock(cancelAmount);
+        CashWalletHistoryCommand command =
+                new CashWalletHistoryCommand(cashWallet, TRADE_REFUND, cancelAmount, cashWallet.getBalance());
+        cashWalletHistoryService.createCashWalletHistory(command);
     }
 
     private void saveMatch(Order makerOrder, Order takerOrder) {
