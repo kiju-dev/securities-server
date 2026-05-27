@@ -102,7 +102,7 @@ class OrderResultServiceTest {
         )).willReturn(Optional.of(marketStatus));
 
         // when
-        orderResultService.handleExchangeOrderResponse(response, BUY);
+        orderResultService.handleExchangeOrderResponse(response, takerBuyOrder.getId());
 
         // then
         assertThat(takerBuyOrder.getUnfilledQuantity()).isZero();
@@ -162,7 +162,7 @@ class OrderResultServiceTest {
         )).willReturn(Optional.of(marketStatus));
 
         // when
-        orderResultService.handleExchangeOrderResponse(response, SELL);
+        orderResultService.handleExchangeOrderResponse(response, takerSellOrder.getId());
 
         // then
         assertThat(takerSellOrder.getUnfilledQuantity()).isZero();
@@ -238,7 +238,7 @@ class OrderResultServiceTest {
         )).willReturn(Optional.of(marketStatus));
 
         // when
-        orderResultService.handleExchangeOrderResponse(response, BUY);
+        orderResultService.handleExchangeOrderResponse(response, takerBuyOrder.getId());
 
         // then
         assertThat(takerBuyOrder.getUnfilledQuantity()).isZero();
@@ -311,7 +311,7 @@ class OrderResultServiceTest {
         )).willReturn(Optional.of(marketStatus));
 
         // when
-        orderResultService.handleExchangeOrderResponse(response, BUY);
+        orderResultService.handleExchangeOrderResponse(response, takerBuyOrder.getId());
 
         // then
         verify(stockWalletRepository).save(any(StockWallet.class));
@@ -350,7 +350,7 @@ class OrderResultServiceTest {
         );
 
         // when
-        orderResultService.handleExchangeOrderResponse(response, BUY);
+        orderResultService.handleExchangeOrderResponse(response, 1L);
 
         // then
         verifyNoInteractions(
@@ -361,6 +361,81 @@ class OrderResultServiceTest {
                 marketStatusRepository,
                 cashWalletHistoryService,
                 stockWalletHistoryService
+        );
+    }
+
+    @Test
+    void 거래소_응답이_CANCELLED이고_매수_주문이면_미체결_금액을_해제한다() {
+        // given
+        User buyer = createUser(1L, "buyer");
+        Stock stock = createStock(1L);
+
+        Order buyOrder = createBuyOrder(1L, buyer, stock, 10000L, 10L);
+        CashWallet cashWallet = createBuyerCashWallet(buyer, 100000L);
+
+        ExchangeOrderResponse response = new ExchangeOrderResponse(
+                MatchResult.CANCELLED,
+                null,
+                List.of(),
+                0L,
+                0L
+        );
+
+        given(orderRepository.findById(1L)).willReturn(Optional.of(buyOrder));
+        given(cashWalletRepository.findByUserId(1L)).willReturn(Optional.of(cashWallet));
+
+        // when
+        orderResultService.handleExchangeOrderResponse(response, buyOrder.getId());
+
+        // then
+        assertThat(buyOrder.getUnfilledQuantity()).isZero();
+        assertThat(cashWallet.getBalance()).isEqualTo(100000L);
+        assertThat(cashWallet.getLockedAmount()).isZero();
+
+        verify(cashWalletHistoryService).createCashWalletHistory(any());
+        verifyNoInteractions(
+                stockWalletRepository,
+                matchRepository,
+                marketStatusRepository,
+                stockWalletHistoryService
+        );
+    }
+
+    @Test
+    void 거래소_응답이_CANCELLED이고_매도_주문이면_미체결_수량을_해제한다() {
+        // given
+        User seller = createUser(1L, "seller");
+        Stock stock = createStock(1L);
+
+        Order sellOrder = createSellOrder(1L, seller, stock, 10000L, 10L);
+        StockWallet stockWallet = createSellerStockWallet(seller, stock, 10L);
+
+        ExchangeOrderResponse response = new ExchangeOrderResponse(
+                MatchResult.CANCELLED,
+                null,
+                List.of(),
+                0L,
+                0L
+        );
+
+        given(orderRepository.findById(1L)).willReturn(Optional.of(sellOrder));
+        given(stockWalletRepository.findByUserIdAndStockId(1L, 1L))
+                .willReturn(Optional.of(stockWallet));
+
+        // when
+        orderResultService.handleExchangeOrderResponse(response, sellOrder.getId());
+
+        // then
+        assertThat(sellOrder.getUnfilledQuantity()).isZero();
+        assertThat(stockWallet.getHoldingQuantity()).isEqualTo(10L);
+        assertThat(stockWallet.getLockedQuantity()).isZero();
+
+        verify(stockWalletHistoryService).createStockWalletHistory(any());
+        verifyNoInteractions(
+                cashWalletRepository,
+                matchRepository,
+                marketStatusRepository,
+                cashWalletHistoryService
         );
     }
 

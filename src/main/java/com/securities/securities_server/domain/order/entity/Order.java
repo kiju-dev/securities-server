@@ -20,6 +20,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_MATCH_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;
+import static com.securities.securities_server.global.exception.ErrorCode.ORDER_CANCEL_NOT_ALLOWED;
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -100,6 +101,14 @@ public class Order extends BaseEntity {
             throw new CustomException(INVALID_MATCH_QUANTITY);
         }
         this.unfilledQuantity -= quantity;
+    }
+
+    public void cancelRemainingQuantity() {
+        if (this.unfilledQuantity <= 0) {
+            throw new CustomException(ORDER_CANCEL_NOT_ALLOWED);
+        }
+        this.canceledQuantity += this.unfilledQuantity;
+        this.unfilledQuantity = 0;
     }
 
     private void validatePositiveQuantity(long quantity) {

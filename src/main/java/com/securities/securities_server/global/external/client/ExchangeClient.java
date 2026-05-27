@@ -2,9 +2,14 @@ package com.securities.securities_server.global.external.client;
 
 import com.securities.securities_server.domain.market.controller.response.MarketCloseResponse;
 import com.securities.securities_server.domain.market.controller.response.MarketOpenResponse;
+import com.securities.securities_server.domain.orderbook.controller.response.OrderBookResponse;
+import com.securities.securities_server.global.external.client.request.ExchangeCancelRequest;
 import com.securities.securities_server.global.external.client.request.ExchangeOrderRequest;
 import com.securities.securities_server.global.external.client.response.ExchangeOrderResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @FeignClient(
@@ -21,4 +26,10 @@ public interface ExchangeClient {
 
     @PostMapping("/market/order")
     ExchangeOrderResponse order(ExchangeOrderRequest request);
+
+    @DeleteMapping("/market/order")
+    ExchangeOrderResponse cancel(ExchangeCancelRequest request);
+
+    @GetMapping("/orderbook/{stockId}")
+    OrderBookResponse getOrderBook(@PathVariable Long stockId);
 }

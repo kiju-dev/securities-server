@@ -2,7 +2,11 @@ package com.securities.securities_server.domain.order.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securities.securities_server.domain.order.controller.request.PlaceOrderRequest;
+import com.securities.securities_server.domain.order.controller.response.CancelOrderResponse;
 import com.securities.securities_server.domain.order.controller.response.PlaceOrderResponse;
+import com.securities.securities_server.domain.order.controller.response.UnfilledOrder;
+import com.securities.securities_server.domain.order.controller.response.UnfilledOrderResponse;
+import com.securities.securities_server.domain.order.entity.OrderSide;
 import com.securities.securities_server.domain.order.service.OrderService;
 import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.config.WebConfig;
@@ -16,13 +20,22 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static com.securities.securities_server.domain.order.entity.MatchResult.CANCELLED;
 import static com.securities.securities_server.domain.order.entity.MatchResult.MATCHED;
 import static com.securities.securities_server.domain.order.entity.OrderSide.BUY;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -65,6 +78,65 @@ class OrderControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(response.orderId()))
-                .andExpect(jsonPath("$.result").value("MATCHED"));
+                .andExpect(jsonPath("$.matchResult").value("MATCHED"));
+    }
+
+    @Test
+    void 주문_취소_요청_시_주문_취소_응답을_반환한다() throws Exception {
+        // given
+        Long userId = 1L;
+        Long orderId = 1L;
+        CancelOrderResponse response = new CancelOrderResponse(orderId, CANCELLED);
+        given(orderService.cancelOrder(userId, orderId)).willReturn(response);
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/order/{orderId}", orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(response.orderId()))
+                .andExpect(jsonPath("$.matchResult").value("CANCELLED"));
+    }
+
+    @Test
+    void 미체결_주문을_조회한다() throws Exception {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+        OrderSide side = OrderSide.BUY;
+        UnfilledOrderResponse response = new UnfilledOrderResponse(
+                1L,
+                List.of(new UnfilledOrder(
+                        stockId,
+                        1L,
+                        side,
+                        70000L,
+                        10L,
+                        10L,
+                        0L,
+                        LocalDateTime.now()
+                ))
+        );
+
+        given(orderService.getUnfilledOrder(
+                eq(userId),
+                eq(stockId),
+                eq(side),
+                any(Pageable.class)
+        )).willReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/order/unfilled")
+                        .param("stockId", String.valueOf(stockId))
+                        .param("side", side.name())
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.unfilledOrderList").isArray())
+                .andExpect(jsonPath("$.unfilledOrderList[0].stockId").value(stockId))
+                .andExpect(jsonPath("$.unfilledOrderList[0].orderId").value(1L))
+                .andExpect(jsonPath("$.unfilledOrderList[0].side").value("BUY"))
+                .andExpect(jsonPath("$.unfilledOrderList[0].price").value(70000L))
+                .andExpect(jsonPath("$.unfilledOrderList[0].unfilledQuantity").value(10L))
+                .andExpect(jsonPath("$.unfilledOrderList[0].canceledQuantity").value(0L));
     }
 }
