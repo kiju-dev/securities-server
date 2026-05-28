@@ -1,9 +1,9 @@
 package com.securities.securities_server.domain.orderbook.controller.response;
 
-import java.util.List;
+import java.util.Map;
 
 public record OrderBookResponse(
-        List<PriceLevel> buy,
-        List<PriceLevel> sell
+        Map<Long, PriceLevel> buy,
+        Map<Long, PriceLevel> sell
 ) {
 }

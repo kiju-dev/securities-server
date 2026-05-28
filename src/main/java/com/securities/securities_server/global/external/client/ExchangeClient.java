@@ -18,18 +18,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 )
 public interface ExchangeClient {
 
-    @PostMapping("/market/open")
+    @PostMapping("/api/v1/market/open")
     MarketOpenResponse openMarket();
 
-    @PostMapping("/market/close")
+    @PostMapping("/api/v1/market/close")
     MarketCloseResponse closeMarket();
 
-    @PostMapping("/market/order")
+    @PostMapping("/api/v1/market/order")
     ExchangeOrderResponse order(ExchangeOrderRequest request);
 
-    @DeleteMapping("/market/order")
+    @DeleteMapping("/api/v1/market/order")
     ExchangeOrderResponse cancel(ExchangeCancelRequest request);
 
-    @GetMapping("/orderbook/{stockId}")
+    @GetMapping("/api/v1/market/orderbook/{stockId}")
     OrderBookResponse getOrderBook(@PathVariable Long stockId);
 }
