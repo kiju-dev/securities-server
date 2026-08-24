@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import com.securities.securities_server.global.common.OrderSide;
 
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_MATCH_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_QUANTITY;

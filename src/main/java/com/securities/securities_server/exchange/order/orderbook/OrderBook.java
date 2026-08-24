@@ -3,21 +3,24 @@ package com.securities.securities_server.exchange.order.orderbook;
 import com.securities.securities_server.exchange.order.ExchangeOrder;
 import com.securities.securities_server.exchange.order.dto.response.ExchangeOrderResponse;
 import com.securities.securities_server.exchange.order.dto.response.MatchedMakerOrder;
-import com.securities.securities_server.securities.orderbook.controller.response.OrderBookResponse;
-import com.securities.securities_server.securities.orderbook.controller.response.OrderSummary;
-import com.securities.securities_server.securities.orderbook.controller.response.PriceLevel;
+import com.securities.securities_server.global.exception.CustomException;
+import com.securities.securities_server.exchange.order.dto.response.OrderBookResponse;
+import com.securities.securities_server.exchange.order.dto.response.OrderSummary;
+import com.securities.securities_server.exchange.order.dto.response.PriceLevel;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.securities.securities_server.securities.order.entity.MatchResult.CANCELLED;
-import static com.securities.securities_server.securities.order.entity.MatchResult.MATCHED;
-import static com.securities.securities_server.securities.order.entity.MatchResult.UNMATCHED;
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
+import static com.securities.securities_server.global.exception.ErrorCode.ORDER_CANCEL_NOT_ALLOWED;
+import static com.securities.securities_server.global.common.MatchResult.CANCELLED;
+import static com.securities.securities_server.global.common.MatchResult.MATCHED;
+import static com.securities.securities_server.global.common.MatchResult.UNMATCHED;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
 
 public class OrderBook {
 
@@ -34,6 +37,9 @@ public class OrderBook {
 
     public ExchangeOrderResponse cancel(Long orderId) {
         ExchangeOrder order = orderMap.remove(orderId);
+        if (order == null) {
+            throw new CustomException(ORDER_CANCEL_NOT_ALLOWED);
+        }
 
         Map<Long, Deque<ExchangeOrder>> orderBook;
         if (order.getSide() == BUY) {
@@ -43,6 +49,10 @@ public class OrderBook {
         }
         Deque<ExchangeOrder> orders = orderBook.get(order.getPrice());
         orders.remove(order);
+
+        if (orders.isEmpty()) {
+            orderBook.remove(order.getPrice());
+        }
 
         return new ExchangeOrderResponse(CANCELLED, null, List.of(), 0L, 0L);
     }
@@ -82,8 +92,13 @@ public class OrderBook {
         List<MatchedMakerOrder> makers = new ArrayList<>();
         long totalMatchedQuantity = 0L;
 
-        while (takerOrder.getRemainingQuantity() > 0 && !makerOrders.isEmpty()) {
-            ExchangeOrder makerOrder = makerOrders.getFirst();
+        Iterator<ExchangeOrder> iterator = makerOrders.iterator();
+        while (takerOrder.getRemainingQuantity() > 0 && iterator.hasNext()) {
+            ExchangeOrder makerOrder = iterator.next();
+
+            if (isSelfTrade(takerOrder, makerOrder)) {
+                continue;
+            }
 
             long matchedQuantity = Math.min(takerOrder.getRemainingQuantity(), makerOrder.getRemainingQuantity());
             takerOrder.decreaseQuantity(matchedQuantity);
@@ -93,7 +108,7 @@ public class OrderBook {
             totalMatchedQuantity += matchedQuantity;
 
             if (makerOrder.getRemainingQuantity() == 0) {
-                makerOrders.pollFirst();
+                iterator.remove();
                 orderMap.remove(makerOrder.getOrderId());
             }
         }
@@ -105,6 +120,10 @@ public class OrderBook {
             addToOrderBook(takerOrder);
         }
 
+        if (makers.isEmpty()) {
+            return new ExchangeOrderResponse(UNMATCHED, null, List.of(), 0L, 0L);
+        }
+
         return new ExchangeOrderResponse(
                 MATCHED,
                 takerOrder.getOrderId(),
@@ -112,6 +131,11 @@ public class OrderBook {
                 takerOrder.getPrice(),
                 totalMatchedQuantity
         );
+    }
+
+    private boolean isSelfTrade(ExchangeOrder takerOrder, ExchangeOrder makerOrder) {
+        return takerOrder.getUserId() != null
+                && takerOrder.getUserId().equals(makerOrder.getUserId());
     }
 
     private void addToOrderBook(ExchangeOrder order) {

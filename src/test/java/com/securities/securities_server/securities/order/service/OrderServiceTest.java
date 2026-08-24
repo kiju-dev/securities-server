@@ -9,7 +9,7 @@ import com.securities.securities_server.securities.order.controller.response.Can
 import com.securities.securities_server.securities.order.controller.response.PlaceOrderResponse;
 import com.securities.securities_server.securities.order.controller.response.UnfilledOrderResponse;
 import com.securities.securities_server.securities.order.entity.Order;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 import com.securities.securities_server.securities.order.repository.OrderRepository;
 import com.securities.securities_server.securities.stock.entity.Stock;
 import com.securities.securities_server.securities.user.entity.User;
@@ -29,9 +29,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static com.securities.securities_server.securities.order.entity.MatchResult.CANCELLED;
-import static com.securities.securities_server.securities.order.entity.MatchResult.MATCHED;
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
+import static com.securities.securities_server.global.common.MatchResult.CANCELLED;
+import static com.securities.securities_server.global.common.MatchResult.MATCHED;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -72,9 +72,20 @@ class OrderServiceTest {
         );
 
         Order order = mock(Order.class);
+        User user = mock(User.class);
         given(order.getId()).willReturn(orderId);
+        given(order.getUser()).willReturn(user);
+        given(user.getId()).willReturn(userId);
 
-        ExchangeOrderRequest exchangeOrderRequest = ExchangeOrderRequest.of(order, request);
+        ExchangeOrderRequest exchangeOrderRequest = new ExchangeOrderRequest(
+                orderId,
+                userId,
+                request.stockId(),
+                request.price(),
+                request.quantity(),
+                request.side(),
+                order.getCreatedAt()
+        );
 
         ExchangeOrderResponse exchangeOrderResponse = new ExchangeOrderResponse(
                 MATCHED,
@@ -121,7 +132,12 @@ class OrderServiceTest {
         given(order.getSide()).willReturn(BUY);
         given(order.getPrice()).willReturn(10000L);
 
-        ExchangeCancelRequest exchangeCancelRequest = ExchangeCancelRequest.from(order);
+        ExchangeCancelRequest exchangeCancelRequest = new ExchangeCancelRequest(
+                orderId,
+                stockId,
+                BUY,
+                10000L
+        );
 
         ExchangeOrderResponse exchangeOrderResponse = new ExchangeOrderResponse(
                 CANCELLED,

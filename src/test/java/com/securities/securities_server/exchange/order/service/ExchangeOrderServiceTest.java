@@ -6,7 +6,7 @@ import com.securities.securities_server.exchange.order.dto.request.ExchangeOrder
 import com.securities.securities_server.exchange.order.dto.response.ExchangeOrderResponse;
 import com.securities.securities_server.exchange.order.orderbook.OrderBook;
 import com.securities.securities_server.exchange.order.orderbook.OrderBookStore;
-import com.securities.securities_server.securities.orderbook.controller.response.OrderBookResponse;
+import com.securities.securities_server.exchange.order.dto.response.OrderBookResponse;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
@@ -20,9 +20,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.securities.securities_server.securities.order.entity.MatchResult.CANCELLED;
-import static com.securities.securities_server.securities.order.entity.MatchResult.UNMATCHED;
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
+import static com.securities.securities_server.global.common.MatchResult.CANCELLED;
+import static com.securities.securities_server.global.common.MatchResult.UNMATCHED;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -48,6 +48,7 @@ class ExchangeOrderServiceTest {
     void 주문_요청_시_장_상태를_검증하고_해당_종목의_OrderBook에_주문을_넣는다() {
         // given
         ExchangeOrderRequest request = new ExchangeOrderRequest(
+                1L,
                 1L,
                 10L,
                 10_000L,

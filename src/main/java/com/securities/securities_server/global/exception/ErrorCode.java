@@ -42,7 +42,7 @@ public enum ErrorCode {
     INVALID_MATCH_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_003", "유효하지 않은 체결 수량입니다."),
     ORDER_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "ORDER_004", "취소 가능한 주문 수량이 없습니다."),
     FORBIDDEN_ORDER_ACCESS(HttpStatus.FORBIDDEN, "ORDER_005", "해당 주문에 접근할 권한이 없습니다."),
-    MARKET_NOT_OPEN(HttpStatus.BAD_REQUEST, "ORDER_001", "개장 시에만 주문이 가능합니다."),
+    MARKET_NOT_OPEN(HttpStatus.BAD_REQUEST, "ORDER_006", "개장 시에만 주문이 가능합니다."),
 
     INTERNAL_SERVER(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_001", "서버 내부에 오류가 발생했습니다."),
     ;

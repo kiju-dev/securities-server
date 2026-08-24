@@ -8,7 +8,7 @@ import com.securities.securities_server.exchange.order.dto.response.ExchangeOrde
 import com.securities.securities_server.exchange.order.orderbook.OrderBook;
 import com.securities.securities_server.exchange.order.orderbook.OrderBookStore;
 
-import com.securities.securities_server.securities.orderbook.controller.response.OrderBookResponse;
+import com.securities.securities_server.exchange.order.dto.response.OrderBookResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

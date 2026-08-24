@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_MATCH_QUANTITY;
 import static com.securities.securities_server.global.exception.ErrorCode.ORDER_CANCEL_NOT_ALLOWED;
 import static org.assertj.core.api.Assertions.assertThat;

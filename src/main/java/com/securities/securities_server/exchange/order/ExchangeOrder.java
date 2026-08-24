@@ -1,7 +1,7 @@
 package com.securities.securities_server.exchange.order;
 
 import com.securities.securities_server.exchange.order.dto.request.ExchangeOrderRequest;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class ExchangeOrder {
 
     private Long orderId;
+    private Long userId;
     private Long stockId;
     private long price;
     private long quantity;
@@ -19,6 +20,7 @@ public class ExchangeOrder {
 
     private ExchangeOrder(
             Long orderId,
+            Long userId,
             Long stockId,
             long price,
             long quantity,
@@ -26,6 +28,7 @@ public class ExchangeOrder {
             LocalDateTime createdAt
     ) {
         this.orderId = orderId;
+        this.userId = userId;
         this.stockId = stockId;
         this.price = price;
         this.quantity = quantity;
@@ -37,6 +40,7 @@ public class ExchangeOrder {
     public static ExchangeOrder from(ExchangeOrderRequest request) {
         return new ExchangeOrder(
                 request.orderId(),
+                request.userId(),
                 request.stockId(),
                 request.price(),
                 request.quantity(),

@@ -1,6 +1,6 @@
 package com.securities.securities_server.securities.orderbook.controller;
 
-import com.securities.securities_server.securities.orderbook.controller.response.OrderBookResponse;
+import com.securities.securities_server.exchange.order.dto.response.OrderBookResponse;
 import com.securities.securities_server.securities.orderbook.service.OrderBookService;
 import com.securities.securities_server.global.auth.AuthUser;
 import lombok.RequiredArgsConstructor;

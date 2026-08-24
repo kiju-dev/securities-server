@@ -1,7 +1,7 @@
 package com.securities.securities_server.securities.orderbook.service;
 
 import com.securities.securities_server.exchange.order.service.ExchangeOrderService;
-import com.securities.securities_server.securities.orderbook.controller.response.OrderBookResponse;
+import com.securities.securities_server.exchange.order.dto.response.OrderBookResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

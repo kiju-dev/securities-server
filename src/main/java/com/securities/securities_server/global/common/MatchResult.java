@@ -1,4 +1,4 @@
-package com.securities.securities_server.securities.order.entity;
+package com.securities.securities_server.global.common;
 
 public enum MatchResult {
 

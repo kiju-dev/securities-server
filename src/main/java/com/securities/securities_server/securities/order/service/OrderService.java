@@ -10,7 +10,7 @@ import com.securities.securities_server.securities.order.controller.response.Pla
 import com.securities.securities_server.securities.order.controller.response.UnfilledOrder;
 import com.securities.securities_server.securities.order.controller.response.UnfilledOrderResponse;
 import com.securities.securities_server.securities.order.entity.Order;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 import com.securities.securities_server.securities.order.repository.OrderRepository;
 import com.securities.securities_server.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class OrderService {
     public PlaceOrderResponse placeOrder(Long userId, PlaceOrderRequest request) {
         Order order = orderCreateService.createOrder(userId, request);
 
-        ExchangeOrderRequest exchangeOrderRequest = ExchangeOrderRequest.of(order, request);
+        ExchangeOrderRequest exchangeOrderRequest = toExchangeOrderRequest(order, request);
         ExchangeOrderResponse exchangeOrderResponse = exchangeOrderService.placeOrder(exchangeOrderRequest);
 
         orderResultService.handleExchangeOrderResponse(exchangeOrderResponse, order.getId());
@@ -47,7 +47,7 @@ public class OrderService {
         Order order = getOrder(orderId);
         validateOwner(userId, order);
 
-        ExchangeCancelRequest exchangeCancelRequest = ExchangeCancelRequest.from(order);
+        ExchangeCancelRequest exchangeCancelRequest = toExchangeCancelRequest(order);
         ExchangeOrderResponse exchangeOrderResponse = exchangeOrderService.cancelOrder(exchangeCancelRequest);
 
         orderResultService.handleExchangeOrderResponse(exchangeOrderResponse, orderId);
@@ -62,6 +62,27 @@ public class OrderService {
         return new UnfilledOrderResponse(
                 unfilledOrders.getTotalElements(),
                 unfilledOrders.getContent()
+        );
+    }
+
+    private ExchangeOrderRequest toExchangeOrderRequest(Order order, PlaceOrderRequest request) {
+        return new ExchangeOrderRequest(
+                order.getId(),
+                order.getUser().getId(),
+                request.stockId(),
+                request.price(),
+                request.quantity(),
+                request.side(),
+                order.getCreatedAt()
+        );
+    }
+
+    private ExchangeCancelRequest toExchangeCancelRequest(Order order) {
+        return new ExchangeCancelRequest(
+                order.getId(),
+                order.getStock().getId(),
+                order.getSide(),
+                order.getPrice()
         );
     }
 

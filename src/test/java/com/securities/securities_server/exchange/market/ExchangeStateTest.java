@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_ALREADY_CLOSE;
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_ALREADY_OPEN;
-import static com.securities.securities_server.securities.market.entity.ExchangeStatus.RUNNING;
-import static com.securities.securities_server.securities.market.entity.ExchangeStatus.STOPPED;
+import static com.securities.securities_server.global.common.ExchangeStatus.RUNNING;
+import static com.securities.securities_server.global.common.ExchangeStatus.STOPPED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 

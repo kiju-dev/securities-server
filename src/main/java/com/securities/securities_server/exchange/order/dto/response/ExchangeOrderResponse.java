@@ -1,6 +1,6 @@
 package com.securities.securities_server.exchange.order.dto.response;
 
-import com.securities.securities_server.securities.order.entity.MatchResult;
+import com.securities.securities_server.global.common.MatchResult;
 
 import java.util.List;
 

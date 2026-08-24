@@ -1,7 +1,6 @@
 package com.securities.securities_server.exchange.order.dto.request;
 
-import com.securities.securities_server.securities.order.entity.Order;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 
 public record ExchangeCancelRequest(
         Long orderId,
@@ -9,12 +8,4 @@ public record ExchangeCancelRequest(
         OrderSide side,
         long price
 ) {
-    public static ExchangeCancelRequest from(Order order) {
-        return new ExchangeCancelRequest(
-                order.getId(),
-                order.getStock().getId(),
-                order.getSide(),
-                order.getPrice()
-        );
-    }
 }

@@ -3,6 +3,7 @@ package com.securities.securities_server.securities.stockwallet.entity;
 import com.securities.securities_server.global.baseentity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -28,9 +30,10 @@ public class StockWalletHistory extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "stock_id", nullable = false)
+    @JoinColumn(name = "stock_wallet_id", nullable = false)
     private StockWallet stockWallet;
 
+    @Enumerated(STRING)
     @Column(nullable = false)
     private StockWalletTxType txType;
 

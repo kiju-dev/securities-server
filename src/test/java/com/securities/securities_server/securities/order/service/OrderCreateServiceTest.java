@@ -27,15 +27,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
-import static com.securities.securities_server.securities.order.entity.OrderSide.SELL;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
+import static com.securities.securities_server.global.common.OrderSide.SELL;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_ORDER_PRICE;
+import static com.securities.securities_server.global.exception.ErrorCode.STOCK_WALLET_SUSPENDED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -216,4 +220,74 @@ class OrderCreateServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(INVALID_ORDER_PRICE);
     }
+
+    @Test
+    void 매수_주문_시_종목_계좌가_정지_상태면_예외가_발생한다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+
+        User user = mock(User.class);
+        Stock stock = mock(Stock.class);
+        CashWallet cashWallet = mock(CashWallet.class);
+        StockWallet stockWallet = mock(StockWallet.class);
+        PlaceOrderRequest request = new PlaceOrderRequest(
+                stockId,
+                BUY,
+                10000L,
+                3L
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
+        given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
+        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId))
+                .willReturn(Optional.of(stockWallet));
+        willThrow(new CustomException(STOCK_WALLET_SUSPENDED))
+                .given(stockWallet).validateNotBlocked();
+
+        // when & then
+        assertThatThrownBy(() -> orderCreateService.createOrder(userId, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(STOCK_WALLET_SUSPENDED);
+
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(cashWallet, never()).lock(anyLong());
+    }
+
+    @Test
+    void 매수_주문_시_종목_계좌가_없어도_주문이_생성된다() {
+        // given
+        Long userId = 1L;
+        Long stockId = 1L;
+
+        User user = mock(User.class);
+        Stock stock = mock(Stock.class);
+        CashWallet cashWallet = mock(CashWallet.class);
+        MarketStatus marketStatus = mock(MarketStatus.class);
+        PlaceOrderRequest request = new PlaceOrderRequest(
+                stockId,
+                BUY,
+                10000L,
+                3L
+        );
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(stockRepository.findById(stockId)).willReturn(Optional.of(stock));
+        given(cashWalletRepository.findByUserId(userId)).willReturn(Optional.of(cashWallet));
+        given(stockWalletRepository.findByUserIdAndStockId(userId, stockId))
+                .willReturn(Optional.empty());
+        given(marketStatusRepository.findByStockIdAndTradingDate(eq(stockId), any(LocalDate.class)))
+                .willReturn(Optional.of(marketStatus));
+        given(marketStatus.getLowerLimitPrice()).willReturn(9500L);
+        given(marketStatus.getUpperLimitPrice()).willReturn(10500L);
+        given(tickSizeCalculator.validatePrice(10000L)).willReturn(true);
+
+        // when
+        orderCreateService.createOrder(userId, request);
+
+        // then
+        verify(orderRepository).save(any(Order.class));
+        verify(cashWallet).lock(30000L);
+    }
+
 }

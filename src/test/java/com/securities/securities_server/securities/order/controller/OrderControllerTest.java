@@ -6,7 +6,7 @@ import com.securities.securities_server.securities.order.controller.response.Can
 import com.securities.securities_server.securities.order.controller.response.PlaceOrderResponse;
 import com.securities.securities_server.securities.order.controller.response.UnfilledOrder;
 import com.securities.securities_server.securities.order.controller.response.UnfilledOrderResponse;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 import com.securities.securities_server.securities.order.service.OrderService;
 import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.config.WebConfig;
@@ -27,9 +27,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.securities.securities_server.securities.order.entity.MatchResult.CANCELLED;
-import static com.securities.securities_server.securities.order.entity.MatchResult.MATCHED;
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
+import static com.securities.securities_server.global.common.MatchResult.CANCELLED;
+import static com.securities.securities_server.global.common.MatchResult.MATCHED;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;

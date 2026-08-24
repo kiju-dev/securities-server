@@ -1,4 +1,4 @@
-package com.securities.securities_server.securities.orderbook.controller.response;
+package com.securities.securities_server.exchange.order.dto.response;
 
 import java.util.List;
 

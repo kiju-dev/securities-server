@@ -21,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
-import static com.securities.securities_server.securities.order.entity.OrderSide.SELL;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
+import static com.securities.securities_server.global.common.OrderSide.SELL;
 import static com.securities.securities_server.global.exception.ErrorCode.CASH_WALLET_NOT_FOUND;
 import static com.securities.securities_server.global.exception.ErrorCode.INVALID_ORDER_PRICE;
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_STATUS_NOT_FOUND;
@@ -55,6 +55,8 @@ public class OrderCreateService {
         if (request.side() == SELL) {
             stockWallet = getStockWallet(userId, request.stockId());
             stockWallet.validateNotBlocked();
+        } else {
+            validateBuyerStockWalletNotBlocked(userId, request.stockId());
         }
 
         LocalDate tradingDate = LocalDate.now();
@@ -88,6 +90,11 @@ public class OrderCreateService {
     private CashWallet getCashWallet(Long userId) {
         return cashWalletRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
+    }
+
+    private void validateBuyerStockWalletNotBlocked(Long userId, Long stockId) {
+        stockWalletRepository.findByUserIdAndStockId(userId, stockId)
+                .ifPresent(StockWallet::validateNotBlocked);
     }
 
     private StockWallet getStockWallet(Long userId, Long stockId) {

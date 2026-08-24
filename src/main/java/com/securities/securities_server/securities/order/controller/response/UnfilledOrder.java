@@ -1,7 +1,7 @@
 package com.securities.securities_server.securities.order.controller.response;
 
 import com.securities.securities_server.securities.order.entity.Order;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 
 import java.time.LocalDateTime;
 

@@ -4,7 +4,7 @@ import com.securities.securities_server.securities.order.controller.request.Plac
 import com.securities.securities_server.securities.order.controller.response.CancelOrderResponse;
 import com.securities.securities_server.securities.order.controller.response.PlaceOrderResponse;
 import com.securities.securities_server.securities.order.controller.response.UnfilledOrderResponse;
-import com.securities.securities_server.securities.order.entity.OrderSide;
+import com.securities.securities_server.global.common.OrderSide;
 import com.securities.securities_server.securities.order.service.OrderService;
 import com.securities.securities_server.global.auth.AuthUser;
 import lombok.RequiredArgsConstructor;

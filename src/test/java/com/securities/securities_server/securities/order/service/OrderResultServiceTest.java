@@ -10,7 +10,7 @@ import com.securities.securities_server.securities.market.repository.MarketStatu
 import com.securities.securities_server.securities.market.service.dto.MarketPriceInfo;
 import com.securities.securities_server.securities.match.entity.Match;
 import com.securities.securities_server.securities.match.repository.MatchRepository;
-import com.securities.securities_server.securities.order.entity.MatchResult;
+import com.securities.securities_server.global.common.MatchResult;
 import com.securities.securities_server.securities.order.entity.Order;
 import com.securities.securities_server.securities.order.repository.OrderRepository;
 import com.securities.securities_server.securities.stock.entity.Stock;
@@ -31,8 +31,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
-import static com.securities.securities_server.securities.order.entity.OrderSide.SELL;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
+import static com.securities.securities_server.global.common.OrderSide.SELL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

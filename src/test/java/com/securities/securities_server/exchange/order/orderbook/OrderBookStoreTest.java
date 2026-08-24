@@ -2,16 +2,16 @@ package com.securities.securities_server.exchange.order.orderbook;
 
 import com.securities.securities_server.exchange.order.ExchangeOrder;
 import com.securities.securities_server.exchange.order.dto.request.ExchangeOrderRequest;
-import com.securities.securities_server.securities.order.entity.OrderSide;
-import com.securities.securities_server.securities.orderbook.controller.response.OrderBookResponse;
+import com.securities.securities_server.global.common.OrderSide;
+import com.securities.securities_server.exchange.order.dto.response.OrderBookResponse;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static com.securities.securities_server.securities.order.entity.OrderSide.BUY;
-import static com.securities.securities_server.securities.order.entity.OrderSide.SELL;
+import static com.securities.securities_server.global.common.OrderSide.BUY;
+import static com.securities.securities_server.global.common.OrderSide.SELL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("NonAsciiCharacters")
@@ -110,6 +110,7 @@ class OrderBookStoreTest {
             OrderSide side
     ) {
         ExchangeOrderRequest request = new ExchangeOrderRequest(
+                orderId,
                 orderId,
                 stockId,
                 price,

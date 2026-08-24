@@ -1,8 +1,8 @@
 package com.securities.securities_server.securities.market.service;
 
 import com.securities.securities_server.exchange.market.service.ExchangeMarketService;
-import com.securities.securities_server.securities.market.controller.response.MarketCloseResponse;
-import com.securities.securities_server.securities.market.controller.response.MarketOpenResponse;
+import com.securities.securities_server.exchange.market.dto.response.MarketCloseResponse;
+import com.securities.securities_server.exchange.market.dto.response.MarketOpenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

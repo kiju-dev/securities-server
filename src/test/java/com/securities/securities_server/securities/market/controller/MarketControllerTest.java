@@ -1,8 +1,8 @@
 package com.securities.securities_server.securities.market.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.securities.securities_server.securities.market.controller.response.MarketCloseResponse;
-import com.securities.securities_server.securities.market.controller.response.MarketOpenResponse;
+import com.securities.securities_server.exchange.market.dto.response.MarketCloseResponse;
+import com.securities.securities_server.exchange.market.dto.response.MarketOpenResponse;
 import com.securities.securities_server.securities.market.service.MarketService;
 import com.securities.securities_server.global.auth.JwtProvider;
 import com.securities.securities_server.global.config.WebConfig;
@@ -22,8 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
-import static com.securities.securities_server.securities.market.entity.ExchangeStatus.RUNNING;
-import static com.securities.securities_server.securities.market.entity.ExchangeStatus.STOPPED;
+import static com.securities.securities_server.global.common.ExchangeStatus.RUNNING;
+import static com.securities.securities_server.global.common.ExchangeStatus.STOPPED;
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_ALREADY_CLOSE;
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_ALREADY_OPEN;
 import static org.mockito.BDDMockito.given;

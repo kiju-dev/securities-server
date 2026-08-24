@@ -1,7 +1,7 @@
 package com.securities.securities_server.securities.market.service;
 
 import com.securities.securities_server.exchange.market.service.ExchangeMarketService;
-import com.securities.securities_server.securities.market.controller.response.MarketOpenResponse;
+import com.securities.securities_server.exchange.market.dto.response.MarketOpenResponse;
 import com.securities.securities_server.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -13,7 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 
-import static com.securities.securities_server.securities.market.entity.ExchangeStatus.RUNNING;
+import static com.securities.securities_server.global.common.ExchangeStatus.RUNNING;
 import static com.securities.securities_server.global.exception.ErrorCode.MARKET_ALREADY_OPEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
