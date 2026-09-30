@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.securities.securities_server.global.exception.ErrorCode.ORDER_CANCEL_NOT_ALLOWED;
 import static com.securities.securities_server.global.common.MatchResult.CANCELLED;
@@ -27,41 +29,57 @@ public class OrderBook {
     private final Map<Long, Deque<ExchangeOrder>> buyBook = new HashMap<>();
     private final Map<Long, Deque<ExchangeOrder>> sellBook = new HashMap<>();
     private final Map<Long, ExchangeOrder> orderMap = new HashMap<>();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public ExchangeOrderResponse place(ExchangeOrder order) {
-        if (order.getSide() == BUY) {
-            return match(order, sellBook);
+        lock.writeLock().lock();
+        try {
+            if (order.getSide() == BUY) {
+                return match(order, sellBook);
+            }
+            return match(order, buyBook);
+        } finally {
+            lock.writeLock().unlock();
         }
-        return match(order, buyBook);
     }
 
     public ExchangeOrderResponse cancel(Long orderId) {
-        ExchangeOrder order = orderMap.remove(orderId);
-        if (order == null) {
-            throw new CustomException(ORDER_CANCEL_NOT_ALLOWED);
-        }
+        lock.writeLock().lock();
+        try {
+            ExchangeOrder order = orderMap.remove(orderId);
+            if (order == null) {
+                throw new CustomException(ORDER_CANCEL_NOT_ALLOWED);
+            }
 
-        Map<Long, Deque<ExchangeOrder>> orderBook;
-        if (order.getSide() == BUY) {
-            orderBook = buyBook;
-        } else {
-            orderBook = sellBook;
-        }
-        Deque<ExchangeOrder> orders = orderBook.get(order.getPrice());
-        orders.remove(order);
+            Map<Long, Deque<ExchangeOrder>> orderBook;
+            if (order.getSide() == BUY) {
+                orderBook = buyBook;
+            } else {
+                orderBook = sellBook;
+            }
+            Deque<ExchangeOrder> orders = orderBook.get(order.getPrice());
+            orders.remove(order);
 
-        if (orders.isEmpty()) {
-            orderBook.remove(order.getPrice());
-        }
+            if (orders.isEmpty()) {
+                orderBook.remove(order.getPrice());
+            }
 
-        return new ExchangeOrderResponse(CANCELLED, null, List.of(), 0L, 0L);
+            return new ExchangeOrderResponse(CANCELLED, null, List.of(), 0L, 0L);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public OrderBookResponse getOrderBook() {
-        Map<Long, PriceLevel> buyPriceLevelMap = getPriceLevelMap(buyBook);
-        Map<Long, PriceLevel> sellPriceLevelMap = getPriceLevelMap(sellBook);
+        lock.readLock().lock();
+        try {
+            Map<Long, PriceLevel> buyPriceLevelMap = getPriceLevelMap(buyBook);
+            Map<Long, PriceLevel> sellPriceLevelMap = getPriceLevelMap(sellBook);
 
-        return new OrderBookResponse(buyPriceLevelMap, sellPriceLevelMap);
+            return new OrderBookResponse(buyPriceLevelMap, sellPriceLevelMap);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private Map<Long, PriceLevel> getPriceLevelMap(Map<Long, Deque<ExchangeOrder>> orderBook) {
@@ -157,8 +175,13 @@ public class OrderBook {
     }
 
     public void close() {
-        buyBook.clear();
-        sellBook.clear();
-        orderMap.clear();
+        lock.writeLock().lock();
+        try {
+            buyBook.clear();
+            sellBook.clear();
+            orderMap.clear();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 }

@@ -2,21 +2,16 @@ package com.securities.securities_server.exchange.order.orderbook;
 
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class OrderBookStore {
 
-    private final Map<Long, OrderBook> orderBooks = new HashMap<>();
+    private final Map<Long, OrderBook> orderBooks = new ConcurrentHashMap<>();
 
     public OrderBook getOrderBook(Long stockId) {
-        OrderBook orderBook = orderBooks.get(stockId);
-        if (orderBook == null) {
-            orderBook = new OrderBook();
-            orderBooks.put(stockId, orderBook);
-        }
-        return orderBook;
+        return orderBooks.computeIfAbsent(stockId, id -> new OrderBook());
     }
 
     public void closeAll() {
