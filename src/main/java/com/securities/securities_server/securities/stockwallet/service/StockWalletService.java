@@ -39,7 +39,7 @@ public class StockWalletService {
 
     @Transactional
     public StockWalletBalanceResponse creditStockWallet(Long userId, CreditStockWalletRequest request) {
-        StockWallet stockWallet = getStockWalletByIdAndUserId(request.stockWalletId(), userId);
+        StockWallet stockWallet = getStockWalletWithLock(request.stockWalletId(), userId);
         stockWallet.credit(request.quantity());
         return StockWalletBalanceResponse.from(stockWallet);
     }
@@ -78,8 +78,8 @@ public class StockWalletService {
                 .orElseThrow(() -> new CustomException(STOCK_NOT_FOUND));
     }
 
-    private StockWallet getStockWalletByIdAndUserId(Long stockWalletId, Long userId) {
-        return stockWalletRepository.findByIdAndUserId(stockWalletId, userId)
+    private StockWallet getStockWalletWithLock(Long stockWalletId, Long userId) {
+        return stockWalletRepository.findWithLockByIdAndUserId(stockWalletId, userId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 
@@ -89,7 +89,7 @@ public class StockWalletService {
     }
 
     private StockWallet getStockWallet(Long stockWalletId) {
-        return stockWalletRepository.findById(stockWalletId)
+        return stockWalletRepository.findWithLockById(stockWalletId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 }
