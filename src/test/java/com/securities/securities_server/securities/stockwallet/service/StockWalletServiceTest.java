@@ -132,7 +132,7 @@ class StockWalletServiceTest {
             Long stockWalletId = 1L;
             StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
             CreditStockWalletRequest request = new CreditStockWalletRequest(stockWallet.getId(), 10L);
-            given(stockWalletRepository.findByIdAndUserId(request.stockWalletId(), userId))
+            given(stockWalletRepository.findWithLockByIdAndUserId(request.stockWalletId(), userId))
                     .willReturn(Optional.of(stockWallet));
 
             // when
@@ -154,7 +154,7 @@ class StockWalletServiceTest {
             Long stockWalletId = 1L;
             StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
             CreditStockWalletRequest request = new CreditStockWalletRequest(stockWallet.getId(), 10L);
-            given(stockWalletRepository.findByIdAndUserId(request.stockWalletId(), userId))
+            given(stockWalletRepository.findWithLockByIdAndUserId(request.stockWalletId(), userId))
                     .willReturn(Optional.empty());
 
             // when & then
@@ -214,7 +214,7 @@ class StockWalletServiceTest {
             Long stockId = 1L;
             Long stockWalletId = 1L;
             StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
-            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.of(stockWallet));
+            given(stockWalletRepository.findWithLockById(stockWalletId)).willReturn(Optional.of(stockWallet));
 
             // when
             stockWalletService.blockStockWallet(stockWalletId);
@@ -227,7 +227,7 @@ class StockWalletServiceTest {
         void 종목_계좌를_찾을_수_없으면_STOCK_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             Long stockWalletId = 1L;
-            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.empty());
+            given(stockWalletRepository.findWithLockById(stockWalletId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> stockWalletService.blockStockWallet(stockWalletId))
@@ -248,7 +248,7 @@ class StockWalletServiceTest {
             Long stockWalletId = 1L;
             StockWallet stockWallet = createStockWallet(userId, stockId, stockWalletId);
             stockWallet.block();
-            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.of(stockWallet));
+            given(stockWalletRepository.findWithLockById(stockWalletId)).willReturn(Optional.of(stockWallet));
 
             // when
             stockWalletService.unblockStockWallet(stockWalletId);
@@ -261,7 +261,7 @@ class StockWalletServiceTest {
         void 종목_계좌를_찾을_수_없으면_STOCK_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             Long stockWalletId = 1L;
-            given(stockWalletRepository.findById(stockWalletId)).willReturn(Optional.empty());
+            given(stockWalletRepository.findWithLockById(stockWalletId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> stockWalletService.unblockStockWallet(stockWalletId))

@@ -26,6 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.securities.securities_server.securities.cashwallet.entity.CashWalletTxType.TRADE_PAY;
 import static com.securities.securities_server.securities.cashwallet.entity.CashWalletTxType.TRADE_RECEIVE;
@@ -68,6 +71,7 @@ public class OrderResultService {
 
     private void handleMatched(ExchangeOrderResponse response, Long orderId) {
         Order takerOrder = getOrder(orderId);
+        lockWallets(takerOrder, response.makers());
 
         for (MatchedMakerOrder maker : response.makers()) {
             Order makerOrder = getOrder(maker.orderId());
@@ -88,6 +92,23 @@ public class OrderResultService {
             processMatchedTrade(buyerOrder, sellerOrder, txAmount, matchedQuantity);
             saveMatch(makerOrder, takerOrder);
             updateMarketStatus(takerOrder.getStock(), response.price(), matchedQuantity);
+        }
+    }
+
+    private void lockWallets(Order takerOrder, List<MatchedMakerOrder> makers) {
+        Set<Long> userIds = new TreeSet<>();
+        userIds.add(takerOrder.getUser().getId());
+        for (MatchedMakerOrder maker : makers) {
+            Order makerOrder = getOrder(maker.orderId());
+            userIds.add(makerOrder.getUser().getId());
+        }
+
+        Long stockId = takerOrder.getStock().getId();
+        for (Long userId : userIds) {
+            cashWalletRepository.findWithLockByUserId(userId);
+        }
+        for (Long userId : userIds) {
+            stockWalletRepository.findWithLockByUserIdAndStockId(userId, stockId);
         }
     }
 
@@ -197,12 +218,12 @@ public class OrderResultService {
     }
 
     private StockWallet getSellerStockWallet(Order order) {
-        return stockWalletRepository.findByUserIdAndStockId(order.getUser().getId(), order.getStock().getId())
+        return stockWalletRepository.findWithLockByUserIdAndStockId(order.getUser().getId(), order.getStock().getId())
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 
     private StockWallet getBuyerStockWallet(Order order) {
-        return stockWalletRepository.findByUserIdAndStockId(order.getUser().getId(), order.getStock().getId())
+        return stockWalletRepository.findWithLockByUserIdAndStockId(order.getUser().getId(), order.getStock().getId())
                 .orElseGet(() -> stockWalletRepository.save(
                         StockWallet.create(order.getUser(), order.getStock())
                 ));
@@ -214,7 +235,7 @@ public class OrderResultService {
     }
 
     private CashWallet getCashWallet(Order order) {
-        return cashWalletRepository.findByUserId(order.getUser().getId())
+        return cashWalletRepository.findWithLockByUserId(order.getUser().getId())
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
     }
 }

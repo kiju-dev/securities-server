@@ -90,11 +90,11 @@ class OrderResultServiceTest {
 
         given(orderRepository.findById(1L)).willReturn(Optional.of(takerBuyOrder));
         given(orderRepository.findById(2L)).willReturn(Optional.of(makerSellOrder));
-        given(cashWalletRepository.findByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
-        given(cashWalletRepository.findByUserId(2L)).willReturn(Optional.of(sellerCashWallet));
-        given(stockWalletRepository.findByUserIdAndStockId(1L, 1L))
+        given(cashWalletRepository.findWithLockByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
+        given(cashWalletRepository.findWithLockByUserId(2L)).willReturn(Optional.of(sellerCashWallet));
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(1L, 1L))
                 .willReturn(Optional.of(buyerStockWallet));
-        given(stockWalletRepository.findByUserIdAndStockId(2L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(2L, 1L))
                 .willReturn(Optional.of(sellerStockWallet));
         given(marketStatusRepository.findByStockIdAndTradingDate(
                 eq(1L),
@@ -150,11 +150,11 @@ class OrderResultServiceTest {
 
         given(orderRepository.findById(1L)).willReturn(Optional.of(takerSellOrder));
         given(orderRepository.findById(2L)).willReturn(Optional.of(makerBuyOrder));
-        given(cashWalletRepository.findByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
-        given(cashWalletRepository.findByUserId(2L)).willReturn(Optional.of(sellerCashWallet));
-        given(stockWalletRepository.findByUserIdAndStockId(1L, 1L))
+        given(cashWalletRepository.findWithLockByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
+        given(cashWalletRepository.findWithLockByUserId(2L)).willReturn(Optional.of(sellerCashWallet));
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(1L, 1L))
                 .willReturn(Optional.of(buyerStockWallet));
-        given(stockWalletRepository.findByUserIdAndStockId(2L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(2L, 1L))
                 .willReturn(Optional.of(sellerStockWallet));
         given(marketStatusRepository.findByStockIdAndTradingDate(
                 eq(1L),
@@ -221,15 +221,15 @@ class OrderResultServiceTest {
         given(orderRepository.findById(2L)).willReturn(Optional.of(makerSellOrder1));
         given(orderRepository.findById(3L)).willReturn(Optional.of(makerSellOrder2));
 
-        given(cashWalletRepository.findByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
-        given(cashWalletRepository.findByUserId(2L)).willReturn(Optional.of(sellerCashWallet1));
-        given(cashWalletRepository.findByUserId(3L)).willReturn(Optional.of(sellerCashWallet2));
+        given(cashWalletRepository.findWithLockByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
+        given(cashWalletRepository.findWithLockByUserId(2L)).willReturn(Optional.of(sellerCashWallet1));
+        given(cashWalletRepository.findWithLockByUserId(3L)).willReturn(Optional.of(sellerCashWallet2));
 
-        given(stockWalletRepository.findByUserIdAndStockId(1L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(1L, 1L))
                 .willReturn(Optional.of(buyerStockWallet));
-        given(stockWalletRepository.findByUserIdAndStockId(2L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(2L, 1L))
                 .willReturn(Optional.of(sellerStockWallet1));
-        given(stockWalletRepository.findByUserIdAndStockId(3L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(3L, 1L))
                 .willReturn(Optional.of(sellerStockWallet2));
 
         given(marketStatusRepository.findByStockIdAndTradingDate(
@@ -293,16 +293,16 @@ class OrderResultServiceTest {
         given(orderRepository.findById(1L)).willReturn(Optional.of(takerBuyOrder));
         given(orderRepository.findById(2L)).willReturn(Optional.of(makerSellOrder));
 
-        given(cashWalletRepository.findByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
-        given(cashWalletRepository.findByUserId(2L)).willReturn(Optional.of(sellerCashWallet));
+        given(cashWalletRepository.findWithLockByUserId(1L)).willReturn(Optional.of(buyerCashWallet));
+        given(cashWalletRepository.findWithLockByUserId(2L)).willReturn(Optional.of(sellerCashWallet));
 
-        given(stockWalletRepository.findByUserIdAndStockId(1L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(1L, 1L))
                 .willReturn(Optional.empty());
 
         given(stockWalletRepository.save(any(StockWallet.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
-        given(stockWalletRepository.findByUserIdAndStockId(2L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(2L, 1L))
                 .willReturn(Optional.of(sellerStockWallet));
 
         given(marketStatusRepository.findByStockIdAndTradingDate(
@@ -382,7 +382,7 @@ class OrderResultServiceTest {
         );
 
         given(orderRepository.findById(1L)).willReturn(Optional.of(buyOrder));
-        given(cashWalletRepository.findByUserId(1L)).willReturn(Optional.of(cashWallet));
+        given(cashWalletRepository.findWithLockByUserId(1L)).willReturn(Optional.of(cashWallet));
 
         // when
         orderResultService.handleExchangeOrderResponse(response, buyOrder.getId());
@@ -419,7 +419,7 @@ class OrderResultServiceTest {
         );
 
         given(orderRepository.findById(1L)).willReturn(Optional.of(sellOrder));
-        given(stockWalletRepository.findByUserIdAndStockId(1L, 1L))
+        given(stockWalletRepository.findWithLockByUserIdAndStockId(1L, 1L))
                 .willReturn(Optional.of(stockWallet));
 
         // when

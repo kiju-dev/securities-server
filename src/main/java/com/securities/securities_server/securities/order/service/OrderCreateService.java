@@ -88,7 +88,7 @@ public class OrderCreateService {
     }
 
     private CashWallet getCashWallet(Long userId) {
-        return cashWalletRepository.findByUserId(userId)
+        return cashWalletRepository.findWithLockByUserId(userId)
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
     }
 
@@ -98,7 +98,7 @@ public class OrderCreateService {
     }
 
     private StockWallet getStockWallet(Long userId, Long stockId) {
-        return stockWalletRepository.findByUserIdAndStockId(userId, stockId)
+        return stockWalletRepository.findWithLockByUserIdAndStockId(userId, stockId)
                 .orElseThrow(() -> new CustomException(STOCK_WALLET_NOT_FOUND));
     }
 

@@ -55,7 +55,7 @@ public class CashWalletService {
 
     @Transactional
     public DepositCashWalletResponse depositCashWallet(Long userId, DepositCashWalletRequest request) {
-        CashWallet cashWallet = getCashWallet(userId);
+        CashWallet cashWallet = getCashWalletWithLock(userId);
 
         cashWallet.deposit(request.amount());
         saveHistory(cashWallet, DEPOSIT, request.amount());
@@ -64,7 +64,7 @@ public class CashWalletService {
 
     @Transactional
     public WithdrawCashWalletResponse withdrawCashWallet(Long userId, WithdrawCashWalletRequest request) {
-        CashWallet cashWallet = getCashWallet(userId);
+        CashWallet cashWallet = getCashWalletWithLock(userId);
 
         cashWallet.withdraw(request.amount());
         saveHistory(cashWallet, WITHDRAW, request.amount());
@@ -117,8 +117,13 @@ public class CashWalletService {
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
     }
 
+    private CashWallet getCashWalletWithLock(Long userId) {
+        return cashWalletRepository.findWithLockByUserId(userId)
+                .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
+    }
+
     private CashWallet getCashWalletById(Long cashWalletId) {
-        return cashWalletRepository.findById(cashWalletId)
+        return cashWalletRepository.findWithLockById(cashWalletId)
                 .orElseThrow(() -> new CustomException(CASH_WALLET_NOT_FOUND));
     }
 

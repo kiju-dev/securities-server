@@ -15,20 +15,20 @@ import static com.securities.securities_server.global.common.ExchangeStatus.STOP
 @Getter
 public class ExchangeState {
 
-    private ExchangeStatus status = STOPPED;
+    private volatile ExchangeStatus status = STOPPED;
 
     public boolean isRunning() {
         return status == RUNNING;
     }
 
-    public void open() {
+    public synchronized void open() {
         if (status == RUNNING) {
             throw new CustomException(MARKET_ALREADY_OPEN);
         }
         status = RUNNING;
     }
 
-    public void close() {
+    public synchronized void close() {
         if (status == STOPPED) {
             throw new CustomException(MARKET_ALREADY_CLOSE);
         }

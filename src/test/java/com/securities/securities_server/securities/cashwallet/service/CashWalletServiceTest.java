@@ -113,7 +113,7 @@ class CashWalletServiceTest {
             User user = createUser(1L);
             DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when
             DepositCashWalletResponse response = cashWalletService.depositCashWallet(user.getId(), request);
@@ -135,7 +135,7 @@ class CashWalletServiceTest {
             // given
             User user = createUser(1L);
             DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.empty());
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.depositCashWallet(user.getId(), request))
@@ -152,7 +152,7 @@ class CashWalletServiceTest {
             DepositCashWalletRequest request = new DepositCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.block();
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.depositCashWallet(user.getId(), request))
@@ -173,7 +173,7 @@ class CashWalletServiceTest {
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.deposit(30000L);
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when
             WithdrawCashWalletResponse response = cashWalletService.withdrawCashWallet(user.getId(), request);
@@ -195,7 +195,7 @@ class CashWalletServiceTest {
             // given
             User user = createUser(1L);
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.empty());
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(user.getId(), request))
@@ -212,7 +212,7 @@ class CashWalletServiceTest {
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.block();
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(user.getId(), request))
@@ -228,7 +228,7 @@ class CashWalletServiceTest {
             User user = createUser(1L);
             WithdrawCashWalletRequest request = new WithdrawCashWalletRequest(10000L);
             CashWallet cashWallet = createCashWallet(user);
-            given(cashWalletRepository.findByUserId(user.getId())).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockByUserId(user.getId())).willReturn(Optional.of(cashWallet));
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.withdrawCashWallet(user.getId(), request))
@@ -302,7 +302,7 @@ class CashWalletServiceTest {
             User user = createUser(userId);
             CashWallet cashWallet = createCashWallet(user);
 
-            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockById(cashWalletId)).willReturn(Optional.of(cashWallet));
 
             // when
             cashWalletService.blockCashWallet(cashWalletId);
@@ -315,7 +315,7 @@ class CashWalletServiceTest {
         void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             Long cashWalletId = 1L;
-            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.empty());
+            given(cashWalletRepository.findWithLockById(cashWalletId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.blockCashWallet(cashWalletId))
@@ -337,7 +337,7 @@ class CashWalletServiceTest {
             CashWallet cashWallet = createCashWallet(user);
             cashWallet.block();
 
-            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.of(cashWallet));
+            given(cashWalletRepository.findWithLockById(cashWalletId)).willReturn(Optional.of(cashWallet));
 
             // when
             cashWalletService.unblockCashWallet(cashWalletId);
@@ -350,7 +350,7 @@ class CashWalletServiceTest {
         void 현금_계좌를_찾을_수_없으면_CASH_WALLET_NOT_FOUND_예외가_발생한다() {
             // given
             Long cashWalletId = 1L;
-            given(cashWalletRepository.findById(cashWalletId)).willReturn(Optional.empty());
+            given(cashWalletRepository.findWithLockById(cashWalletId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cashWalletService.unblockCashWallet(cashWalletId))
